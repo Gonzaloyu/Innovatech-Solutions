@@ -1,0 +1,328 @@
+/*  ESTILOS BASE*/
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    margin: 0; 
+    background-color: #f0f2f5; 
+    color: #333; 
+}
+
+#app { 
+    display: flex; 
+    flex-direction: column; 
+    min-height: 100vh; 
+}
+
+/* CABECERA Y NAVEGACIÓN*/
+.main-header { 
+    background: #1e293b; 
+    color: white; 
+    padding: 2rem; 
+    text-align: center; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+    position: relative;
+}
+
+.main-header h1 { 
+    margin: 0; 
+    font-size: 2.5rem; 
+}
+
+.user-nav {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.user-name { 
+    font-size: 0.9rem;
+    color: #cbd5e1; 
+}
+
+/* DASHBOARD Y MÓDULOS PRINCIPALES*/
+.dashboard-container { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 2rem; 
+    padding: 2rem; 
+    max-width: 1400px; 
+    margin: 0 auto; 
+}
+
+.module { 
+    background: white; 
+    padding: 1.5rem; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+}
+
+.module-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 1.5rem; 
+    border-bottom: 2px solid #e2e8f0; 
+    padding-bottom: 0.75rem; 
+}
+
+
+.module-header h2 {
+    margin: 0;
+    color: #0f172a; 
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+
+.badge { 
+    padding: 6px 14px; 
+    border-radius: 20px; 
+    font-size: 0.85rem; 
+    font-weight: 800; 
+    letter-spacing: 0.5px;
+}
+
+.mysql { 
+    background-color: #e0f2fe; 
+    color: #0284c7; 
+    border: 1px solid #bae6fd;
+}
+
+.postgres { 
+    background-color: #eff6ff; 
+    color: #1d4ed8; 
+    border: 1px solid #bfdbfe;
+}
+
+/* TABLAS Y LISTAS*/
+.list-container { margin-top: 2rem; }
+
+.data-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-top: 1rem; 
+}
+
+.data-table th, .data-table td { 
+    text-align: left; 
+    padding: 12px; 
+    border-bottom: 1px solid #eee; 
+}
+
+.data-table th { 
+    background: #f8fafc; 
+    color: #64748b; 
+    text-transform: uppercase; 
+    font-size: 0.8rem; 
+}
+
+.empty-msg { 
+    text-align: center; 
+    color: #94a3b8; 
+    padding: 2rem; 
+    font-style: italic; 
+}
+
+/* ESTADOS Y ETIQUETAS*/
+.status { 
+    padding: 4px 8px; 
+    border-radius: 4px; 
+    font-size: 0.8rem; 
+    font-weight: bold; 
+}
+
+.status.activo { background: #dcfce7; color: #166534; }
+.status.en-pausa { background: #fef9c3; color: #854d0e; }
+.status.finalizado { background: #fee2e2; color: #991b1b; }
+
+.available { color: #166534; font-weight: 600; }
+.busy { color: #b45309; font-weight: 600; }
+
+.error { 
+    color: #ef4444; 
+    font-weight: 600; 
+    background-color: #fee2e2;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+/* TARJETAS (CARDS)*/
+.card { 
+    background-color: white;
+    border: 1px solid #e2e8f0; 
+    padding: 20px; 
+    border-radius: 12px; 
+    margin-bottom: 20px; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.card h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.25rem;
+    color: #1e293b;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 10px;
+}
+
+.card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.card li {
+    padding: 12px 0;
+    border-bottom: 1px solid #f8fafc;
+    color: #475569;
+}
+
+.card li:last-child {
+    border-bottom: none;
+}
+
+/* FORMULARIOS */
+.form-container { 
+    background: #f8fafc; 
+    padding: 20px; 
+    border-radius: 8px; 
+    margin-bottom: 20px; 
+    border: 1px solid #e2e8f0; 
+}
+
+.form-container form { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+}
+
+.form-container input,
+.form-container textarea,
+.form-container select { 
+    box-sizing: border-box; 
+    width: 100%;
+    padding: 10px; 
+    border-radius: 6px; 
+    border: 1px solid #cbd5e1; 
+    font-family: inherit;
+    font-size: 0.95rem;
+    background-color: white;
+    color: #334155;
+}
+
+.form-container input:focus,
+.form-container textarea:focus,
+.form-container select:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+.form-container textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Botones de Formularios */
+.btn-empleado { 
+    background: #4f46e5; 
+    color: white; 
+    border: none; 
+    padding: 12px; 
+    border-radius: 6px;
+    cursor: pointer; 
+    font-weight: bold; 
+    transition: background-color 0.2s ease;
+}
+
+.btn-empleado:hover { background: #4338ca; }
+
+.btn-proyecto { 
+    background: #10b981; 
+    color: white; 
+    border: none; 
+    padding: 12px; 
+    border-radius: 6px;
+    cursor: pointer; 
+    font-weight: bold; 
+    transition: background-color 0.2s ease;
+}
+
+.btn-proyecto:hover { background: #059669; }
+
+/* AUTENTICACIÓN */
+.login-welcome {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    padding: 2rem;
+}
+
+.welcome-card {
+    text-align: center;
+    background: white;
+    padding: 3rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    max-width: 450px;
+    width: 100%;
+}
+
+.welcome-card h2 { color: #1e293b; margin-bottom: 1rem; }
+.welcome-card p { color: #64748b; line-height: 1.6; margin-bottom: 2rem; }
+
+.auth-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.auth-btn.login {
+    background-color: #2563eb;
+    color: white;
+    width: 100%;
+    font-size: 1rem;
+}
+
+.auth-btn.login:hover {
+    background-color: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.auth-btn.logout {
+    background-color: #ef4444;
+    color: white;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+}
+
+.auth-btn.logout:hover { background-color: #dc2626; }
+
+.loading-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* FOOTER Y RESPONSIVIDAD */
+.main-footer { 
+    text-align: center; 
+    padding: 1.5rem; 
+    color: #64748b; 
+    font-size: 0.9rem; 
+    margin-top: auto; 
+}
+
+@media (max-width: 900px) {
+    .dashboard-container { grid-template-columns: 1fr; }
+}

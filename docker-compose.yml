@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Base de datos para Proyectos (MySQL)
+  mysql-db:
+    image: mysql:8.0
+    container_name: innovatech-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: innovatech_projects
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+
+  # Base de datos para Recursos (PostgreSQL)
+  postgres-db:
+    image: postgres:15
+    container_name: innovatech-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: innovatech_resources
+    ports:
+      - "5435:5432" 
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  kafka:
+    image: confluentinc/confluent-local:7.5.0
+    container_name: mi-kafka-local
+    ports:
+      - "9092:9092"
+
+  
+volumes:
+  mysql_data:
+  postgres_data:
+
+  
