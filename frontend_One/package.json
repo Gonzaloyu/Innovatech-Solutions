@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@auth0/auth0-vue": "^2.7.0",
-    "axios": "^1.16.0",
+    "axios": "^1.16.1",
     "libreria_vue_auth": "file:../../Desktop/front/libreria_mia",
     "vue": "^3.5.32"
   },

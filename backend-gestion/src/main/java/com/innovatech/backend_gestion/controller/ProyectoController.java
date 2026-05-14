@@ -22,7 +22,6 @@ public class ProyectoController {
     @Autowired
     private ProyectoRepository proyectoRepository;
 
-    // 1. INYECTA EL SERVICIO DE KAFKA AQUÍ
     @Autowired
     private KafkaProducerService kafkaProducerService;
     // Obtener todos los proyectos 
