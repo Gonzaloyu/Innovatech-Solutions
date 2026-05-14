@@ -18,11 +18,11 @@ public class NotificacionService {
 
     @KafkaListener(topics = "proyectos-topic", groupId = "grupo-final-test-100")
     public void escucharNuevoProyecto(String mensajeKafka) {
-        System.out.println("📩 [NUEVA NOTIFICACIÓN RECIBIDA]: " + mensajeKafka);
+        System.out.println("[NUEVA NOTIFICACIÓN RECIBIDA]: " + mensajeKafka);
         
         Notificacion nuevaNotificacion = new Notificacion("Correo enviado por: " + mensajeKafka);
         repository.save(nuevaNotificacion);
         
-        System.out.println("✅ Registro de notificación guardado en BD.");
+        System.out.println("Registro de notificación guardado en BD.");
     }
 }
