@@ -1,28 +1,44 @@
 package com.innovatech.backend_notificaciones.service;
 
+import com.innovatech.backend_notificaciones.model.BitacoraAuditoria;
 import com.innovatech.backend_notificaciones.model.Notificacion;
+import com.innovatech.backend_notificaciones.repository.BitacoraAuditoriaRepository;
+import com.innovatech.backend_notificaciones.repository.NotificacionRepository;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-interface NotificacionRepository extends JpaRepository<Notificacion, Long> {}
 
 @Service
 public class NotificacionService {
 
-    private final NotificacionRepository repository;
+    private final NotificacionRepository notificacionRepository;
+    private final BitacoraAuditoriaRepository bitacoraRepository;
 
-    public NotificacionService(NotificacionRepository repository) {
-        this.repository = repository;
+    public NotificacionService(NotificacionRepository notificacionRepository,
+                               BitacoraAuditoriaRepository bitacoraRepository) {
+        this.notificacionRepository = notificacionRepository;
+        this.bitacoraRepository = bitacoraRepository;
     }
 
-    @KafkaListener(topics = "proyectos-topic", groupId = "grupo-final-test-100")
+    @KafkaListener(topics = "proyectos-topic", groupId = "grupo-notificaciones")
     public void escucharNuevoProyecto(String mensajeKafka) {
-        System.out.println("[NUEVA NOTIFICACIÓN RECIBIDA]: " + mensajeKafka);
-        
-        Notificacion nuevaNotificacion = new Notificacion("Correo enviado por: " + mensajeKafka);
-        repository.save(nuevaNotificacion);
-        
-        System.out.println("Registro de notificación guardado en BD.");
+        System.out.println("[KAFKA] Mensaje recibido: " + mensajeKafka);
+
+        // 1. Guardar notificación
+        Notificacion notificacion = new Notificacion(
+            "Correo enviado: " + mensajeKafka,
+            "administracion@innovatech.cl"
+        );
+        notificacionRepository.save(notificacion);
+        System.out.println("[NOTIFICACIÓN] Guardada en BD.");
+
+        // 2. Registrar en bitácora de auditoría
+        BitacoraAuditoria registro = new BitacoraAuditoria(
+            "CREAR_PROYECTO",
+            "Proyecto",
+            "sistema-kafka",
+            "{\"mensaje\": \"" + mensajeKafka + "\"}"
+        );
+        bitacoraRepository.save(registro);
+        System.out.println("[AUDITORÍA] Registro guardado en bitácora.");
     }
 }

@@ -2,10 +2,14 @@ package com.innovatech.backend_analitico.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Entity
 @Table(name = "asignaciones")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Asignacion {
 
     @Id
@@ -16,7 +20,7 @@ public class Asignacion {
     @JoinColumn(name = "empleado_id", nullable = false)
     private Empleado empleado;
 
-    // Solo guardamos el ID, sin FK real (microservicio separado)
+    // Soft link al backend-gestion (MySQL)
     @Column(name = "proyecto_id", nullable = false)
     private Long proyectoId;
 

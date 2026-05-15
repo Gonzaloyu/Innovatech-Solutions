@@ -326,3 +326,8 @@ body {
 @media (max-width: 900px) {
     .dashboard-container { grid-template-columns: 1fr; }
 }
+
+/* Estados actualizados según backend-gestion */
+.status.en-planificación { background: #eff6ff; color: #1d4ed8; }
+.status.en-ejecución     { background: #dcfce7; color: #166534; }
+.status.finalizado       { background: #fee2e2; color: #991b1b; }

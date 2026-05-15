@@ -18,6 +18,12 @@ public class EmpleadoServiceImpl implements EmpleadoService {
     }
 
     @Override
+    public Empleado obtenerPorId(Long id) {
+        return empleadoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Empleado no encontrado con id: " + id));
+    }
+
+    @Override
     public Empleado crearEmpleado(Empleado empleado) {
         return empleadoRepository.save(empleado);
     }
