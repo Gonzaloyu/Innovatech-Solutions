@@ -1,11 +1,10 @@
 package com.innovatech.backend_gestion.repository;
 
-
-import com.innovatech.backend_gestion.model.Proyecto;
+import com.innovatech.backend_gestion.model.Categoria;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ProyectoRepository extends JpaRepository<Proyecto, Long> {
+public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
     // Aquí podemos agregar métodos de búsqueda personalizados después
 }
