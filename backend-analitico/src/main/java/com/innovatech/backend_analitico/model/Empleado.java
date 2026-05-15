@@ -15,9 +15,14 @@ public class Empleado {
     @Column(nullable = false)
     private String nombre;
 
-    private String cargo;
+    @Column(nullable = false, unique = true)
+    private String email;
 
-    private String departamento;
+    @ManyToOne
+    @JoinColumn(name = "departamento_id", nullable = false)
+    private Departamento departamento;
 
-    private Double salario;
+    @ManyToOne
+    @JoinColumn(name = "cargo_id", nullable = false)
+    private Cargo cargo;
 }
