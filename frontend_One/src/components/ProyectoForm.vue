@@ -9,22 +9,22 @@
 
       <select v-model="nuevoProyecto.estado.id" required>
         <option disabled value="">Seleccionar Estado</option>
-        <option value="1">En Planificación</option>
-        <option value="2">En Ejecución</option>
-        <option value="3">Finalizado</option>
+        <option :value="1">En Planificación</option>
+        <option :value="2">En Ejecución</option>
+        <option :value="3">Finalizado</option>
       </select>
 
       <select v-model="nuevoProyecto.categoria.id" required>
         <option disabled value="">Seleccionar Categoría</option>
-        <option value="1">Desarrollo</option>
-        <option value="2">Infraestructura</option>
-        <option value="3">Consultoría</option>
+        <option :value="1">Desarrollo</option>
+        <option :value="2">Infraestructura</option>
+        <option :value="3">Consultoría</option>
       </select>
 
       <select v-model="nuevoProyecto.cliente.id" required>
         <option disabled value="">Seleccionar Cliente</option>
-        <option value="1">Cliente 1</option>
-        <option value="2">Cliente 2</option>
+        <option :value="1">Empresa Demo 1</option>
+        <option :value="2">Empresa Demo 2</option>
       </select>
 
       <button type="submit" class="btn-proyecto">Guardar Proyecto</button>
@@ -43,9 +43,9 @@ export default {
         descripcion: '',
         fechaInicio: '',
         fechaFin: '',
-        estado: { id: '' },
-        categoria: { id: '' },
-        cliente: { id: '' }
+        estado: { id: null },
+        categoria: { id: null },
+        cliente: { id: null }
       }
     };
   },
@@ -53,7 +53,8 @@ export default {
     async guardarProyecto() {
       try {
         const respuesta = await api.createProyecto(this.nuevoProyecto);
-        if (respuesta.data?.error) {
+        // Solo falla si hay error Y no tiene id (guardado real)
+        if (respuesta.data?.error && !respuesta.data?.id) {
           alert('Problema en el backend: ' + respuesta.data.error);
           return;
         }
@@ -61,7 +62,7 @@ export default {
         this.$emit('proyecto-creado');
         this.nuevoProyecto = {
           nombre: '', descripcion: '', fechaInicio: '', fechaFin: '',
-          estado: { id: '' }, categoria: { id: '' }, cliente: { id: '' }
+          estado: { id: null }, categoria: { id: null }, cliente: { id: null }
         };
       } catch (error) {
         alert('Error crítico de red: ' + error.message);

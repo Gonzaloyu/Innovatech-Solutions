@@ -9,33 +9,27 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// URLs de los microservicios (variables de entorno para Docker)
 const GESTION_URL   = process.env.GESTION_URL   || 'http://localhost:8081/api';
 const ANALITICO_URL = process.env.ANALITICO_URL || 'http://localhost:8082/api';
 
-//onfiguración Circuit Breaker
+// Timeout aumentado a 5s para dar tiempo a Kafka
 const breakerOptions = {
-  timeout: 3000,
+  timeout: 5000,
   errorThresholdPercentage: 50,
   resetTimeout: 10000
 };
 
-//Funciones de comunicación 
-// Gestión (MySQL - backend-gestion)
 const fetchProyectos      = ()     => axios.get(`${GESTION_URL}/proyectos`).then(r => r.data);
 const saveProyecto        = (data) => axios.post(`${GESTION_URL}/proyectos`, data).then(r => r.data);
 const fetchTareas         = ()     => axios.get(`${GESTION_URL}/tareas`).then(r => r.data);
 const fetchTareaPorId     = (id)   => axios.get(`${GESTION_URL}/tareas/${id}`).then(r => r.data);
 const saveTarea           = (data) => axios.post(`${GESTION_URL}/tareas`, data).then(r => r.data);
-
-// Analítico (PostgreSQL - backend-analitico)
 const fetchEmpleados      = ()     => axios.get(`${ANALITICO_URL}/empleados`).then(r => r.data);
 const fetchEmpleadoPorId  = (id)   => axios.get(`${ANALITICO_URL}/empleados/${id}`).then(r => r.data);
 const saveEmpleado        = (data) => axios.post(`${ANALITICO_URL}/empleados`, data).then(r => r.data);
 const fetchAsignaciones   = ()     => axios.get(`${ANALITICO_URL}/asignaciones`).then(r => r.data);
 const saveAsignacion      = (data) => axios.post(`${ANALITICO_URL}/asignaciones`, data).then(r => r.data);
 
-//Circuit Breakers 
 const proyectosGetBreaker   = new CircuitBreaker(fetchProyectos,    breakerOptions);
 const proyectosPostBreaker  = new CircuitBreaker(saveProyecto,      breakerOptions);
 const tareasGetBreaker      = new CircuitBreaker(fetchTareas,       breakerOptions);
@@ -44,7 +38,6 @@ const empleadosGetBreaker   = new CircuitBreaker(fetchEmpleados,    breakerOptio
 const empleadosPostBreaker  = new CircuitBreaker(saveEmpleado,      breakerOptions);
 const asignacionPostBreaker = new CircuitBreaker(saveAsignacion,    breakerOptions);
 
-//Fallbacks 
 const fallback = (msg) => ({ error: msg });
 proyectosGetBreaker.fallback(()  => fallback('Servicio de Proyectos no disponible'));
 proyectosPostBreaker.fallback(() => fallback('No se pudo guardar el Proyecto'));
@@ -54,7 +47,6 @@ empleadosGetBreaker.fallback(()  => fallback('Servicio de Empleados no disponibl
 empleadosPostBreaker.fallback(() => fallback('No se pudo guardar el Empleado'));
 asignacionPostBreaker.fallback(()=> fallback('No se pudo guardar la Asignación'));
 
-// ─── Logging de eventos Circuit Breaker ──────────────────────────────────────
 const logCircuit = (name, breaker) => {
   breaker.on('open',     () => console.warn(`⚡ [${name}] Circuit ABIERTO - servicio caído`));
   breaker.on('halfOpen', () => console.log(`🔄 [${name}] Circuit SEMI-ABIERTO - reintentando`));
@@ -69,10 +61,6 @@ logCircuit('empleados-GET',  empleadosGetBreaker);
 logCircuit('empleados-POST', empleadosPostBreaker);
 logCircuit('asignacion-POST',asignacionPostBreaker);
 
-
-// ENDPOINTS DEL BFF
-
-//Health Check 
 app.get('/health', (req, res) => {
   res.json({
     status: 'UP',
@@ -84,7 +72,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-//Proyectos
 app.get('/api/bff/proyectos', async (req, res) => {
   try {
     const data = await proyectosGetBreaker.fire();
@@ -95,9 +82,18 @@ app.get('/api/bff/proyectos', async (req, res) => {
   }
 });
 
+// POST proyectos — ignora error de Kafka si el proyecto se guardó
 app.post('/api/bff/proyectos', async (req, res) => {
   try {
     const data = await proyectosPostBreaker.fire(req.body);
+    // Si tiene id, se guardó bien aunque Kafka haya fallado
+    if (data && data.id) {
+      return res.status(201).json(data);
+    }
+    // Si no tiene id pero tiene error, falló de verdad
+    if (data && data.error) {
+      return res.status(503).json(data);
+    }
     res.status(201).json(data);
   } catch (error) {
     console.error('BFF Error proyectos POST:', error.message);
@@ -105,7 +101,6 @@ app.post('/api/bff/proyectos', async (req, res) => {
   }
 });
 
-//tareas
 app.get('/api/bff/tareas', async (req, res) => {
   try {
     const data = await tareasGetBreaker.fire();
@@ -126,7 +121,6 @@ app.post('/api/bff/tareas', async (req, res) => {
   }
 });
 
-// Empleados
 app.get('/api/bff/empleados', async (req, res) => {
   try {
     const data = await empleadosGetBreaker.fire();
@@ -147,7 +141,6 @@ app.post('/api/bff/empleados', async (req, res) => {
   }
 });
 
-// Asignaciones
 app.post('/api/bff/asignaciones', async (req, res) => {
   try {
     const data = await asignacionPostBreaker.fire(req.body);
@@ -158,18 +151,12 @@ app.post('/api/bff/asignaciones', async (req, res) => {
   }
 });
 
-// API Composition: Tareas con Empleado
 app.get('/api/bff/tareas-con-empleado', async (req, res) => {
   try {
-    // 1. Obtener todas las tareas desde backend-gestion
     const tareas = await tareasGetBreaker.fire();
-
-    // 2. IDs únicos de empleados (Set evita duplicados)
     const empleadoIds = [...new Set(
       tareas.map(t => t.empleadoId).filter(id => id != null)
     )];
-
-    // 3. Buscar cada empleado en paralelo con Circuit Breaker individual
     const empleadosData = await Promise.all(
       empleadoIds.map(id => {
         const breaker = new CircuitBreaker(
@@ -180,31 +167,23 @@ app.get('/api/bff/tareas-con-empleado', async (req, res) => {
         return breaker.fire();
       })
     );
-
-    // 4. Mapa id -> empleado para cruce O(1)
     const empleadosMap = {};
     empleadosData
       .filter(emp => emp !== null)
       .forEach(emp => { empleadosMap[emp.id] = emp; });
-
-    // 5. Unir tarea + empleado
     const tareasDetalladas = tareas.map(tarea => ({
       ...tarea,
       empleado: empleadosMap[tarea.empleadoId] || null
     }));
-
     res.json(tareasDetalladas);
-
   } catch (error) {
     console.error('BFF Composition Error:', error.message);
     res.status(500).json({ error: 'Error al consolidar tareas con empleados' });
   }
 });
 
-//API Composition: Proyectos con Cliente y Estado ─
 app.get('/api/bff/proyectos-detalle', async (req, res) => {
   try {
-    // Los proyectos ya traen cliente y estado por las relaciones JPA
     const proyectos = await proyectosGetBreaker.fire();
     res.json(proyectos);
   } catch (error) {
@@ -213,22 +192,17 @@ app.get('/api/bff/proyectos-detalle', async (req, res) => {
   }
 });
 
-//API Composition: Tarea por ID con Empleado 
 app.get('/api/bff/tareas-con-empleado/:id', async (req, res) => {
   try {
-    // 1. Buscar tarea específica
     const tareaBreaker = new CircuitBreaker(
       () => fetchTareaPorId(req.params.id),
       breakerOptions
     );
     tareaBreaker.fallback(() => null);
     const tarea = await tareaBreaker.fire();
-
     if (!tarea) {
       return res.status(404).json({ error: 'Tarea no encontrada' });
     }
-
-    // 2. Buscar empleado si tiene asignado
     let empleado = null;
     if (tarea.empleadoId) {
       const empBreaker = new CircuitBreaker(
@@ -238,17 +212,13 @@ app.get('/api/bff/tareas-con-empleado/:id', async (req, res) => {
       empBreaker.fallback(() => null);
       empleado = await empBreaker.fire();
     }
-
-    // 3. Unir y responder
     res.json({ ...tarea, empleado });
-
   } catch (error) {
     console.error('BFF Error tarea detalle:', error.message);
     res.status(500).json({ error: 'Error al obtener detalle de tarea' });
   }
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`BFF escuchando en http://localhost:${PORT}`);
+  console.log(`🚀 BFF escuchando en http://localhost:${PORT}`);
 });
