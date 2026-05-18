@@ -1,7 +1,9 @@
 <template>
   <div class="card">
     <h2>Recursos Humanos</h2>
-    <div v-if="loading">Cargando empleados...</div>
+    
+    <div v-if="loading" class="spinner"></div>
+    
     <div v-else-if="error" class="error">{{ error }}</div>
     <ul v-else>
       <li v-for="empleado in empleados" :key="empleado.id">

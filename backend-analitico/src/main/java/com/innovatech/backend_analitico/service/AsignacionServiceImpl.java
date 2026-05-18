@@ -18,6 +18,11 @@ public class AsignacionServiceImpl implements AsignacionService {
     }
 
     @Override
+    public List<Asignacion> obtenerTodas() {
+        return asignacionRepository.findAll();
+    }
+
+    @Override
     public List<Asignacion> obtenerPorEmpleado(Long empleadoId) {
         return asignacionRepository.findByEmpleadoId(empleadoId);
     }

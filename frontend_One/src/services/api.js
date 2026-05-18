@@ -6,10 +6,25 @@ const apiClient = axios.create({
 });
 
 export default {
+  // PROYECTOS
   getProyectos()         { return apiClient.get('/proyectos'); },
   createProyecto(data)   { return apiClient.post('/proyectos', data); },
+
+  // TAREAS
+  getTareas()            { return apiClient.get('/tareas'); },
+  createTarea(data)      { return apiClient.post('/tareas', data); },
+  getTareasConEmpleado() { return apiClient.get('/tareas-con-empleado'); },
+
+  // EMPLEADOS
   getEmpleados()         { return apiClient.get('/empleados'); },
   createEmpleado(data)   { return apiClient.post('/empleados', data); },
-  getTareasConEmpleado() { return apiClient.get('/tareas-con-empleado'); },
-  createAsignacion(data) { return apiClient.post('/asignaciones', data); }
+
+  // ASIGNACIONES
+  createAsignacion(data) { return apiClient.post('/asignaciones', data); },
+
+  // KPIs y REPORTES (backend-reportes)
+  getKpis()                     { return apiClient.get('/kpis'); },
+  getEmpleadosPorDepartamento() { return apiClient.get('/reportes/empleados-por-departamento'); },
+  getProyectosPorEstado()       { return apiClient.get('/reportes/proyectos-por-estado'); },
+  getProyectosPorCategoria()    { return apiClient.get('/reportes/proyectos-por-categoria'); }
 };

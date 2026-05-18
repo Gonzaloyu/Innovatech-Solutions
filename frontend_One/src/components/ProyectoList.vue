@@ -1,7 +1,9 @@
 <template>
   <div class="card">
     <h2>Gestión de Proyectos</h2>
-    <div v-if="loading">Cargando proyectos...</div>
+    
+    <div v-if="loading" class="spinner"></div>
+    
     <div v-else-if="error" class="error">{{ error }}</div>
     <ul v-else>
       <li v-for="proyecto in proyectos" :key="proyecto.id">

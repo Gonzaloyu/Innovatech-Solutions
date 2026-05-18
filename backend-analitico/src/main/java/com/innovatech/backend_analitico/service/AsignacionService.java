@@ -5,6 +5,7 @@ import java.util.List;
 
 public interface AsignacionService {
     Asignacion crearAsignacion(Asignacion asignacion);
+    List<Asignacion> obtenerTodas();
     List<Asignacion> obtenerPorEmpleado(Long empleadoId);
     List<Asignacion> obtenerPorProyecto(Long proyectoId);
 }

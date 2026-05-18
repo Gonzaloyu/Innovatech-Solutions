@@ -16,6 +16,11 @@ public class AsignacionController {
     @Autowired
     private AsignacionService asignacionService;
 
+    @GetMapping
+    public ResponseEntity<List<Asignacion>> obtenerTodas() {
+        return ResponseEntity.ok(asignacionService.obtenerTodas());
+    }
+
     @PostMapping
     public ResponseEntity<Asignacion> crearAsignacion(@RequestBody Asignacion asignacion) {
         return ResponseEntity.status(HttpStatus.CREATED)
