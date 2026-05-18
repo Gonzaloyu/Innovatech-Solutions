@@ -19,7 +19,6 @@ const breakerOptions = {
   resetTimeout: 10000
 };
 
-// Funciones de comunicación
 const fetchProyectos      = ()     => axios.get(`${GESTION_URL}/proyectos`).then(r => r.data);
 const saveProyecto        = (data) => axios.post(`${GESTION_URL}/proyectos`, data).then(r => r.data);
 const fetchTareas         = ()     => axios.get(`${GESTION_URL}/tareas`).then(r => r.data);
@@ -34,20 +33,18 @@ const fetchEmpPorDepto    = ()     => axios.get(`${REPORTES_URL}/reportes/emplea
 const fetchProjPorEstado  = ()     => axios.get(`${REPORTES_URL}/reportes/proyectos-por-estado`).then(r => r.data);
 const fetchProjPorCat     = ()     => axios.get(`${REPORTES_URL}/reportes/proyectos-por-categoria`).then(r => r.data);
 
-// Circuit Breakers
-const proyectosGetBreaker   = new CircuitBreaker(fetchProyectos,   breakerOptions);
-const proyectosPostBreaker  = new CircuitBreaker(saveProyecto,     breakerOptions);
-const tareasGetBreaker      = new CircuitBreaker(fetchTareas,      breakerOptions);
-const tareasPostBreaker     = new CircuitBreaker(saveTarea,        breakerOptions);
-const empleadosGetBreaker   = new CircuitBreaker(fetchEmpleados,   breakerOptions);
-const empleadosPostBreaker  = new CircuitBreaker(saveEmpleado,     breakerOptions);
-const asignacionPostBreaker = new CircuitBreaker(saveAsignacion,   breakerOptions);
-const kpisBreaker           = new CircuitBreaker(fetchKpis,        breakerOptions);
-const empPorDeptoBreaker    = new CircuitBreaker(fetchEmpPorDepto, breakerOptions);
+const proyectosGetBreaker   = new CircuitBreaker(fetchProyectos,     breakerOptions);
+const proyectosPostBreaker  = new CircuitBreaker(saveProyecto,       breakerOptions);
+const tareasGetBreaker      = new CircuitBreaker(fetchTareas,        breakerOptions);
+const tareasPostBreaker     = new CircuitBreaker(saveTarea,          breakerOptions);
+const empleadosGetBreaker   = new CircuitBreaker(fetchEmpleados,     breakerOptions);
+const empleadosPostBreaker  = new CircuitBreaker(saveEmpleado,       breakerOptions);
+const asignacionPostBreaker = new CircuitBreaker(saveAsignacion,     breakerOptions);
+const kpisBreaker           = new CircuitBreaker(fetchKpis,          breakerOptions);
+const empPorDeptoBreaker    = new CircuitBreaker(fetchEmpPorDepto,   breakerOptions);
 const projPorEstadoBreaker  = new CircuitBreaker(fetchProjPorEstado, breakerOptions);
-const projPorCatBreaker     = new CircuitBreaker(fetchProjPorCat,  breakerOptions);
+const projPorCatBreaker     = new CircuitBreaker(fetchProjPorCat,    breakerOptions);
 
-// Fallbacks
 const fallback = (msg) => ({ error: msg });
 proyectosGetBreaker.fallback(()   => fallback('Servicio de Proyectos no disponible'));
 proyectosPostBreaker.fallback(()  => fallback('No se pudo guardar el Proyecto'));
@@ -65,11 +62,10 @@ empPorDeptoBreaker.fallback(()   => ({}));
 projPorEstadoBreaker.fallback(() => ({}));
 projPorCatBreaker.fallback(()    => ({}));
 
-// Logging Circuit Breakers
 const logCircuit = (name, breaker) => {
-  breaker.on('open',     () => console.warn(`⚡ [${name}] Circuit ABIERTO - servicio caído`));
-  breaker.on('halfOpen', () => console.log(`🔄 [${name}] Circuit SEMI-ABIERTO - reintentando`));
-  breaker.on('close',    () => console.log(`✅ [${name}] Circuit CERRADO - servicio recuperado`));
+  breaker.on('open',     () => console.warn(`[${name}] Circuit ABIERTO - servicio caído`));
+  breaker.on('halfOpen', () => console.log(`[${name}] Circuit SEMI-ABIERTO - reintentando`));
+  breaker.on('close',    () => console.log(`[${name}] Circuit CERRADO - servicio recuperado`));
 };
 
 logCircuit('proyectos-GET',       proyectosGetBreaker);
@@ -84,20 +80,20 @@ logCircuit('emp-por-depto-GET',   empPorDeptoBreaker);
 logCircuit('proj-por-estado-GET', projPorEstadoBreaker);
 logCircuit('proj-por-cat-GET',    projPorCatBreaker);
 
-// ── Health Check ──────────────────────────────────────────────────────────────
+// Health Check
 app.get('/health', (req, res) => {
   res.json({
     status: 'UP',
     circuits: {
-      proyectosGet:  proyectosGetBreaker.opened  ? 'OPEN' : 'CLOSED',
-      tareasGet:     tareasGetBreaker.opened     ? 'OPEN' : 'CLOSED',
-      empleadosGet:  empleadosGetBreaker.opened  ? 'OPEN' : 'CLOSED',
-      kpisGet:       kpisBreaker.opened          ? 'OPEN' : 'CLOSED',
+      proyectosGet: proyectosGetBreaker.opened ? 'OPEN' : 'CLOSED',
+      tareasGet:    tareasGetBreaker.opened    ? 'OPEN' : 'CLOSED',
+      empleadosGet: empleadosGetBreaker.opened ? 'OPEN' : 'CLOSED',
+      kpisGet:      kpisBreaker.opened         ? 'OPEN' : 'CLOSED',
     }
   });
 });
 
-// ── Proyectos ─────────────────────────────────────────────────────────────────
+// Proyectos
 app.get('/api/bff/proyectos', async (req, res) => {
   try {
     const data = await proyectosGetBreaker.fire();
@@ -120,7 +116,34 @@ app.post('/api/bff/proyectos', async (req, res) => {
   }
 });
 
-// ── Tareas ────────────────────────────────────────────────────────────────────
+// Proyectos por empleado
+app.get('/api/bff/proyectos/empleado/:empleadoId', async (req, res) => {
+  try {
+    const data = await axios.get(
+      `${GESTION_URL}/proyectos/empleado/${req.params.empleadoId}`
+    );
+    res.json(data.data);
+  } catch (error) {
+    console.error('BFF Error proyectos por empleado:', error.message);
+    res.status(500).json({ error: 'Error al obtener proyectos del empleado' });
+  }
+});
+
+// Actualizar estado de proyecto
+app.patch('/api/bff/proyectos/:id/estado', async (req, res) => {
+  try {
+    const data = await axios.patch(
+      `${GESTION_URL}/proyectos/${req.params.id}/estado`,
+      req.body
+    );
+    res.json(data.data);
+  } catch (error) {
+    console.error('BFF Error actualizar estado:', error.message);
+    res.status(500).json({ error: 'Error al actualizar estado' });
+  }
+});
+
+// Tareas
 app.get('/api/bff/tareas', async (req, res) => {
   try {
     const data = await tareasGetBreaker.fire();
@@ -141,7 +164,7 @@ app.post('/api/bff/tareas', async (req, res) => {
   }
 });
 
-// ── Empleados ─────────────────────────────────────────────────────────────────
+// Empleados
 app.get('/api/bff/empleados', async (req, res) => {
   try {
     const data = await empleadosGetBreaker.fire();
@@ -162,7 +185,7 @@ app.post('/api/bff/empleados', async (req, res) => {
   }
 });
 
-// ── Asignaciones ──────────────────────────────────────────────────────────────
+// Asignaciones
 app.post('/api/bff/asignaciones', async (req, res) => {
   try {
     const data = await asignacionPostBreaker.fire(req.body);
@@ -173,7 +196,7 @@ app.post('/api/bff/asignaciones', async (req, res) => {
   }
 });
 
-// ── KPIs desde backend-reportes ───────────────────────────────────────────────
+// KPIs
 app.get('/api/bff/kpis', async (req, res) => {
   try {
     const data = await kpisBreaker.fire();
@@ -214,7 +237,7 @@ app.get('/api/bff/reportes/proyectos-por-categoria', async (req, res) => {
   }
 });
 
-// ── API Composition: Tareas con Empleado ──────────────────────────────────────
+// API Composition
 app.get('/api/bff/tareas-con-empleado', async (req, res) => {
   try {
     const tareas = await tareasGetBreaker.fire();
@@ -276,5 +299,5 @@ app.get('/api/bff/proyectos-detalle', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 BFF escuchando en http://localhost:${PORT}`);
+  console.log(`BFF escuchando en http://localhost:${PORT}`);
 });

@@ -15,21 +15,18 @@ public class BitacoraAuditoria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Ej: "CREAR_PROYECTO", "ASIGNAR_EMPLEADO"
     @Column(nullable = false)
     private String accion;
 
-    // Ej: "Proyecto", "Tarea", "Empleado"
     @Column(nullable = false)
     private String entidad;
 
-    // Quién ejecutó la acción
+
     @Column(nullable = false)
     private String usuario;
 
     private LocalDateTime fecha;
 
-    // JSON con detalles adicionales del evento
     @Column(columnDefinition = "TEXT")
     private String detalleJson;
 

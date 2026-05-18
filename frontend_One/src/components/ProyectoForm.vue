@@ -27,6 +27,14 @@
         <option :value="2">Empresa Demo 2</option>
       </select>
 
+      <!-- Selector de empleado -->
+      <select v-model="nuevoProyecto.empleadoId">
+        <option :value="null">Sin empleado asignado</option>
+        <option v-for="emp in empleados" :key="emp.id" :value="emp.id">
+          {{ emp.nombre }} — {{ emp.departamento?.nombre }}
+        </option>
+      </select>
+
       <button type="submit" class="btn-proyecto">Guardar Proyecto</button>
     </form>
   </div>
@@ -38,31 +46,47 @@ import api from '../services/api';
 export default {
   data() {
     return {
+      empleados: [],
       nuevoProyecto: {
         nombre: '',
         descripcion: '',
         fechaInicio: '',
         fechaFin: '',
-        estado: { id: null },
-        categoria: { id: null },
-        cliente: { id: null }
+        estado: { id: '' },     
+        categoria: { id: '' },
+        cliente: { id: '' },    
+        empleadoId: null
       }
     };
+  },
+  async mounted() {
+    try {
+      const res = await api.getEmpleados();
+      this.empleados = res.data.error ? [] : res.data;
+    } catch (e) {
+      console.error('Error cargando empleados:', e);
+    }
   },
   methods: {
     async guardarProyecto() {
       try {
         const respuesta = await api.createProyecto(this.nuevoProyecto);
-        // Solo falla si hay error Y no tiene id (guardado real)
         if (respuesta.data?.error && !respuesta.data?.id) {
           alert('Problema en el backend: ' + respuesta.data.error);
           return;
         }
         alert('Proyecto guardado con éxito');
         this.$emit('proyecto-creado');
+        
         this.nuevoProyecto = {
-          nombre: '', descripcion: '', fechaInicio: '', fechaFin: '',
-          estado: { id: null }, categoria: { id: null }, cliente: { id: null }
+          nombre: '', 
+          descripcion: '', 
+          fechaInicio: '', 
+          fechaFin: '',
+          estado: { id: '' },   
+          categoria: { id: '' },  
+          cliente: { id: '' },   
+          empleadoId: null
         };
       } catch (error) {
         alert('Error crítico de red: ' + error.message);

@@ -2,7 +2,6 @@ import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
 
-//Importamos librería personalizada
 import { MiAuthLib } from 'libreria_vue_auth'
 
 const app = createApp(App)
@@ -15,4 +14,4 @@ app.use(MiAuthLib, {
   }
 })
 
-app.mount('#app')
+app.mount('#app') 

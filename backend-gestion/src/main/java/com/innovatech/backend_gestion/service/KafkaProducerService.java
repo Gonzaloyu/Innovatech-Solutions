@@ -14,7 +14,6 @@ public class KafkaProducerService {
 
     public void enviarMensajeProyectoCreado(String nombreProyecto) {
         String mensaje = "Se ha creado un nuevo proyecto en el sistema: " + nombreProyecto;
-        // canal de Kafka
         kafkaTemplate.send("proyectos-topic", mensaje);
         System.out.println("Mensaje enviado a Kafka: " + mensaje);
     }

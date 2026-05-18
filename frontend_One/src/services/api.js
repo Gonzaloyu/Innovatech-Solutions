@@ -26,5 +26,17 @@ export default {
   getKpis()                     { return apiClient.get('/kpis'); },
   getEmpleadosPorDepartamento() { return apiClient.get('/reportes/empleados-por-departamento'); },
   getProyectosPorEstado()       { return apiClient.get('/reportes/proyectos-por-estado'); },
-  getProyectosPorCategoria()    { return apiClient.get('/reportes/proyectos-por-categoria'); }
+  getProyectosPorCategoria()    { return apiClient.get('/reportes/proyectos-por-categoria'); },
+
+  getProyectosPorEmpleado(empleadoId) { 
+    return apiClient.get(`/proyectos/empleado/${empleadoId}`); 
+  },
+
+  actualizarEstadoProyecto(id, data) { 
+    return apiClient.patch(`/proyectos/${id}/estado`, data); 
+  },
+  
+  getEmpleadoPorId(id) { 
+    return apiClient.get(`/empleados/${id}`); 
+  }
 };

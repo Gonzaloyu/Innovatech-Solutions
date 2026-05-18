@@ -31,7 +31,6 @@ public class NotificacionService {
         notificacionRepository.save(notificacion);
         System.out.println("[NOTIFICACIÓN] Guardada en BD.");
 
-        // 2. Registrar en bitácora de auditoría
         BitacoraAuditoria registro = new BitacoraAuditoria(
             "CREAR_PROYECTO",
             "Proyecto",

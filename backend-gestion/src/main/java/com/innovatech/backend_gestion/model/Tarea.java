@@ -21,7 +21,7 @@ public class Tarea {
     @JoinColumn(name = "proyecto_id", nullable = false)
     private Proyecto proyecto;
 
-    // Soft link al backend-analitico
+    //llama a empleado de backend-analitico
     private Long empleadoId;
 
     @ManyToOne

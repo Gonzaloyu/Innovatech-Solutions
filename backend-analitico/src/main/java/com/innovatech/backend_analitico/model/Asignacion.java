@@ -20,7 +20,7 @@ public class Asignacion {
     @JoinColumn(name = "empleado_id", nullable = false)
     private Empleado empleado;
 
-    // Soft link al backend-gestion (MySQL)
+    // MySQL
     @Column(name = "proyecto_id", nullable = false)
     private Long proyectoId;
 

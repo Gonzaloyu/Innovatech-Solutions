@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/proyectos")
@@ -28,7 +29,18 @@ public class ProyectoController {
 
     @PostMapping
     public ResponseEntity<Proyecto> crearProyecto(@RequestBody Proyecto proyecto) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(proyectoService.crearProyecto(proyecto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(proyectoService.crearProyecto(proyecto));
+    }
+
+    @GetMapping("/empleado/{empleadoId}")
+    public ResponseEntity<List<Proyecto>> obtenerPorEmpleado(@PathVariable Long empleadoId) {
+        return ResponseEntity.ok(proyectoService.obtenerPorEmpleado(empleadoId));
+    }
+
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<Proyecto> actualizarEstado(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        return ResponseEntity.ok(proyectoService.actualizarEstado(id, body));
     }
 }

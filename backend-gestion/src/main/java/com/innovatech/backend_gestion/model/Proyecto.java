@@ -37,4 +37,7 @@ public class Proyecto {
     @ManyToOne
     @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
+
+    @Column(name = "empleado_id")
+    private Long empleadoId;
 }

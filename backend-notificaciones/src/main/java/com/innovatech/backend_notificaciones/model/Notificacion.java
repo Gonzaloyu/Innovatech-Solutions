@@ -18,7 +18,6 @@ public class Notificacion {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String mensaje;
 
-    // A quién va dirigida la notificación
     @Column(nullable = false)
     private String destinatario;
 

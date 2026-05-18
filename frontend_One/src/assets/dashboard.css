@@ -510,3 +510,124 @@ body {
 .modal-box .empty-msg {
     padding: 3rem;
 }
+
+/* PORTAL EMPLEADO */
+.portal-container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+}
+
+.portal-login {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.portal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 1.5rem;
+}
+
+.portal-header h2 { margin: 0; color: #0f172a; }
+.portal-header p  { margin: 0.25rem 0 0; color: #64748b; }
+
+.portal-content h3 {
+    color: #0f172a;
+    margin-bottom: 1rem;
+}
+
+.proyectos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.proyecto-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-left: 4px solid #4f46e5;
+}
+
+.proyecto-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.proyecto-desc {
+    color: #64748b;
+    font-size: 0.85rem;
+    margin: 0 0 0.75rem;
+}
+
+.proyecto-fechas {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-bottom: 1rem;
+}
+
+.proyecto-acciones {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.proyecto-acciones select {
+    flex: 1;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.85rem;
+}
+
+.btn-actualizar {
+    background: #4f46e5;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.btn-actualizar:hover { background: #4338ca; }
+
+.proyecto-completado {
+    background: #dcfce7;
+    color: #166534;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.btn-volver {
+    background: #f1f5f9;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.btn-volver:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
