@@ -17,5 +17,5 @@ public class Categoria {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String nombre; // "Desarrollo", "Infraestructura", "Consultoría"
+    private String nombre; // Ej: "Software", "Infraestructura", "Consultoría"
 }
