@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
 
-  # ── Base de datos Proyectos (MySQL) ──────────────────────────────
+  #MySQL
   mysql-db:
     image: mysql:8.0
     container_name: innovatech-mysql
@@ -19,7 +19,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Base de datos Recursos (PostgreSQL) ──────────────────────────
+  #PostgreSQL
   postgres-db:
     image: postgres:15
     container_name: innovatech-postgres
@@ -37,7 +37,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Kafka ─────────────────────────────────────────────────────────
+  # Kafka
   kafka:
     image: confluentinc/confluent-local:7.5.0
     container_name: innovatech-kafka
