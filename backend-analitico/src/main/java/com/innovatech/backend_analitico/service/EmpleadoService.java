@@ -5,6 +5,7 @@ import java.util.List;
 
 public interface EmpleadoService {
     List<Empleado> obtenerTodos();
+    Empleado obtenerPorId(Long id);
     Empleado crearEmpleado(Empleado empleado);
     List<Empleado> obtenerPorDepartamento(Long departamentoId);
 }

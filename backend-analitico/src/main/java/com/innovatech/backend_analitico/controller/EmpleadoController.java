@@ -10,6 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/empleados")
+@CrossOrigin(origins = "http://localhost:3000")
 public class EmpleadoController {
 
     @Autowired
@@ -18,6 +19,11 @@ public class EmpleadoController {
     @GetMapping
     public ResponseEntity<List<Empleado>> obtenerTodos() {
         return ResponseEntity.ok(empleadoService.obtenerTodos());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Empleado> obtenerPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(empleadoService.obtenerPorId(id));
     }
 
     @GetMapping("/departamento/{id}")

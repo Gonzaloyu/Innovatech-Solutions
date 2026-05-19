@@ -10,10 +10,16 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/asignaciones")
+@CrossOrigin(origins = "http://localhost:3000")
 public class AsignacionController {
 
     @Autowired
     private AsignacionService asignacionService;
+
+    @GetMapping
+    public ResponseEntity<List<Asignacion>> obtenerTodas() {
+        return ResponseEntity.ok(asignacionService.obtenerTodas());
+    }
 
     @PostMapping
     public ResponseEntity<Asignacion> crearAsignacion(@RequestBody Asignacion asignacion) {

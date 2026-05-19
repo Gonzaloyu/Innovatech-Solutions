@@ -1,21 +1,35 @@
 package com.innovatech.backend_notificaciones.model;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "notificaciones")
+@Data
+@NoArgsConstructor
 public class Notificacion {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String mensaje;
+
+    @Column(nullable = false)
+    private String destinatario;
+
     private LocalDateTime fechaEnvio;
 
-    public Notificacion() {}
-    public Notificacion(String mensaje) {
-        this.mensaje = mensaje;
+    @PrePersist
+    public void prePersist() {
         this.fechaEnvio = LocalDateTime.now();
     }
-    public String getMensaje() { return mensaje; }
-    public LocalDateTime getFechaEnvio() { return fechaEnvio; }
+
+    public Notificacion(String mensaje, String destinatario) {
+        this.mensaje = mensaje;
+        this.destinatario = destinatario;
+    }
 }

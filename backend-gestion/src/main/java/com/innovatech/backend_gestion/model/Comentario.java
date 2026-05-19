@@ -15,11 +15,16 @@ public class Comentario {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String texto;
 
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
+    private LocalDateTime fechaCreacion;
+
+    @PrePersist
+    public void prePersist() {
+        this.fechaCreacion = LocalDateTime.now();
+    }
 
     @ManyToOne
     @JoinColumn(name = "proyecto_id", nullable = false)
     private Proyecto proyecto;
-    
-    private String autor; // Nombre de quien comenta
+
+    private String autor;
 }

@@ -3,10 +3,13 @@
     <header class="main-header">
       <h1>Innovatech Solutions</h1>
       <p>Plataforma Inteligente de Gestión Integral</p>
-      
       <div v-if="isAuthenticated" class="user-nav">
         <span class="user-name">Hola, {{ user?.name }}</span>
-        <button @click="logout({ returnTo: window.location.origin })" class="auth-btn logout">
+        <button @click="vistaActual = 'portal'" class="btn-portal">
+          Portal Empleado
+        </button>
+        <button @click="logout({ logoutParams: { returnTo: window.location.origin } })"
+                class="auth-btn logout">
           Cerrar Sesión
         </button>
       </div>
@@ -16,68 +19,138 @@
       <p>Verificando credenciales...</p>
     </div>
 
-    <main v-else-if="isAuthenticated" class="dashboard-container">
-      <section class="module">
-        <div class="module-header">
-          <h2>Gestión de Proyectos</h2>
-          <span class="badge mysql">MySQL</span>
-        </div>
-        <ProyectoForm @proyecto-creado="cargarDatos" />
-        <div class="list-container">
-          <h3>Proyectos Actuales</h3>
-          <div v-if="proyectos.length === 0" class="empty-msg">No hay proyectos registrados.</div>
-          <table v-else class="data-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Estado</th>
-                <th>Fecha Inicio</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="p in proyectos" :key="p.id">
-                <td><strong>{{ p.nombre }}</strong></td>
-                <td><span :class="'status ' + p.estado.toLowerCase().replace(' ', '-')">{{ p.estado }}</span></td>
-                <td>{{ p.fechaInicio }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+    <template v-else-if="isAuthenticated">
 
-      <section class="module">
-        <div class="module-header">
-          <h2>Gestión de Recursos</h2>
-          <span class="badge postgres">PostgreSQL</span>
+      <template v-if="vistaActual === 'dashboard'">
+        <div v-if="kpis" class="kpi-container">
+          <div class="kpi-card green">
+            <p class="kpi-numero">{{ kpis.totalProyectos }}</p>
+            <p class="kpi-label">Total Proyectos</p>
+          </div>
+          <div class="kpi-card blue">
+            <p class="kpi-numero">{{ kpis.proyectosEnEjecucion }}</p>
+            <p class="kpi-label">En Ejecución</p>
+          </div>
+          <div class="kpi-card red">
+            <p class="kpi-numero">{{ kpis.proyectosAtrasados }}</p>
+            <p class="kpi-label">Atrasados</p>
+          </div>
+          <div class="kpi-card purple">
+            <p class="kpi-numero">{{ kpis.totalEmpleados }}</p>
+            <p class="kpi-label">Empleados</p>
+          </div>
+          <div class="kpi-card orange">
+            <p class="kpi-numero">{{ kpis.totalAsignaciones }}</p>
+            <p class="kpi-label">Asignaciones</p>
+          </div>
         </div>
-        <EmpleadoForm @empleado-creado="cargarDatos" />
-        <div class="list-container">
-          <h3>Crear Empleados</h3>
-          <div v-if="empleados.length === 0" class="empty-msg">No hay empleados registrados.</div>
-          <table v-else class="data-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Cargo</th>
-                <th>Departamento</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="e in empleados" :key="e.id">
-                <td><strong>{{ e.nombre }}</strong></td>
-                <td>{{ e.cargo }}</td>
-                <td>{{ e.departamento }}</td>
-              </tr>
-            </tbody>
-          </table>
+
+        <div class="page-container">
+          <div class="forms-row">
+            <div class="module">
+              <div class="module-header">
+                <h2>Gestión de Proyectos</h2>
+                <span class="badge mysql">MySQL</span>
+              </div>
+              <ProyectoForm @proyecto-creado="cargarDatos" />
+              <button class="btn-ver" @click="abrirModal('proyectos')">
+                Ver Proyectos ({{ proyectos.length }})
+              </button>
+            </div>
+
+            <div class="module">
+              <div class="module-header">
+                <h2>Gestión de Recursos</h2>
+                <span class="badge postgres">PostgreSQL</span>
+              </div>
+              <EmpleadoForm @empleado-creado="cargarDatos" />
+              <button class="btn-ver" @click="abrirModal('empleados')">
+                Ver Empleados ({{ empleados.length }})
+              </button>
+            </div>
+          </div>
         </div>
-      </section>
-    </main>
+
+        <div v-if="modalActivo" class="modal-overlay" @click.self="cerrarModal">
+          <div class="modal-box">
+            <div class="modal-header">
+              <h2 v-if="modalActivo === 'proyectos'">Proyectos Registrados</h2>
+              <h2 v-else>Empleados Registrados</h2>
+              <button class="modal-close" @click="cerrarModal">✕</button>
+            </div>
+
+            <div v-if="modalActivo === 'proyectos'">
+              <div v-if="proyectos.length === 0" class="empty-msg">
+                No hay proyectos registrados.
+              </div>
+              <table v-else class="data-table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Estado</th>
+                    <th>Categoría</th>
+                    <th>Cliente</th>
+                    <th>Fecha Inicio</th>
+                    <th>Fecha Fin</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="p in proyectos" :key="p.id">
+                    <td><strong>{{ p.nombre }}</strong></td>
+                    <td>
+                      <span :class="'status ' + (p.estado?.nombre?.toLowerCase().replace(/ /g, '-') || '')">
+                        {{ p.estado?.nombre }}
+                      </span>
+                    </td>
+                    <td>{{ p.categoria?.nombre }}</td>
+                    <td>{{ p.cliente?.nombreEmpresa }}</td>
+                    <td>{{ p.fechaInicio }}</td>
+                    <td>{{ p.fechaFin }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div v-if="modalActivo === 'empleados'">
+              <div v-if="empleados.length === 0" class="empty-msg">
+                No hay empleados registrados.
+              </div>
+              <table v-else class="data-table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Cargo</th>
+                    <th>Nivel</th>
+                    <th>Departamento</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="e in empleados" :key="e.id">
+                    <td><strong>{{ e.nombre }}</strong></td>
+                    <td>{{ e.email }}</td>
+                    <td>{{ e.cargo?.nombre }}</td>
+                    <td>{{ e.cargo?.nivel }}</td>
+                    <td>{{ e.departamento?.nombre }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <PortalEmpleado 
+        v-else-if="vistaActual === 'portal'"
+        @volver="vistaActual = 'dashboard'"
+      />
+
+    </template>
 
     <main v-else class="login-welcome">
       <div class="welcome-card">
         <h2>Acceso Restringido</h2>
-        <p>Por favor, inicia sesión para gestionar los proyectos y recursos de la plataforma.</p>
+        <p>Inicia sesión para gestionar proyectos y recursos.</p>
         <button @click="loginWithRedirect()" class="auth-btn login">
           Iniciar Sesión con Auth0
         </button>
@@ -85,104 +158,70 @@
     </main>
 
     <footer class="main-footer">
-      <p>&copy; 2026 Innovatech Solutions - Arquitectura de Microservicios</p>
+      <p>&copy; 2026 Innovatech Solutions — Arquitectura de Microservicios</p>
     </footer>
   </div>
 </template>
 
 <script>
+import './assets/dashboard.css';
+import { useAuth0 } from 'libreria_vue_auth';
 import api from './services/api';
 import ProyectoForm from './components/ProyectoForm.vue';
 import EmpleadoForm from './components/EmpleadoForm.vue';
-
-// IMPORTACIÓN DE TU LIBRERÍA
-import { useAuth0 } from 'libreria_vue_auth';
-
-// IMPORTACIÓN DEL CSS EXTERNO
-import './assets/dashboard.css'; 
+import PortalEmpleado from './components/PortalEmpleado.vue';
 
 export default {
   name: 'App',
-  components: { ProyectoForm, EmpleadoForm },
+  components: { ProyectoForm, EmpleadoForm, PortalEmpleado },
   setup() {
-    // Usamos el hook de tu librería
     const { loginWithRedirect, logout, user, isAuthenticated, isLoading } = useAuth0();
-    
-    return {
-      loginWithRedirect,
-      logout,
-      user,
-      isAuthenticated,
-      isLoading,
-      window
-    };
+    return { loginWithRedirect, logout, user, isAuthenticated, isLoading };
   },
   data() {
-    return { proyectos: [], empleados: [] };
+    return {
+      vistaActual: 'dashboard',
+      proyectos: [],
+      empleados: [],
+      kpis: null,
+      modalActivo: null
+    };
   },
   methods: {
     async cargarDatos() {
-      // Solo intentamos cargar datos si el usuario está autenticado
       if (!this.isAuthenticated) return;
-
       try {
-        const resProyectos = await api.getProjects();
-        const resEmpleados = await api.getEmployees();
+        const [resProyectos, resEmpleados, resKpis] = await Promise.all([
+          api.getProyectos(),
+          api.getEmpleados(),
+          api.getKpis()
+        ]);
         this.proyectos = resProyectos.data.error ? [] : resProyectos.data;
         this.empleados = resEmpleados.data.error ? [] : resEmpleados.data;
+        this.kpis      = resKpis.data.error      ? null : resKpis.data;
       } catch (error) {
-        console.error("Error al cargar datos:", error);
+        console.error('Error al cargar datos:', error);
       }
+    },
+    abrirModal(tipo) {
+      this.modalActivo = tipo;
+    },
+    cerrarModal() {
+      this.modalActivo = null;
     }
   },
   mounted() {
-    // Solo cargamos datos si ya pasó el proceso de autenticación
-    if (this.isAuthenticated) {
-      this.cargarDatos();
-    }
+    if (this.isAuthenticated) this.cargarDatos();
   },
   watch: {
-    // Si el estado de autenticación cambia a verdadero, cargamos los datos automáticamente
     isAuthenticated(newVal) {
-      if (newVal) {
-        this.cargarDatos();
-      }
+      if (newVal) this.cargarDatos();
     }
   }
 };
-</script>
 
+</script>
 <style>
-/* Estilos rápidos para la autenticación */
-.user-nav {
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 15px;
-}
-.user-name { font-weight: bold; color: #fff; }
-.auth-btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: bold;
-}
-.login { background-color: #28a745; color: white; margin-top: 20px; }
-.logout { background-color: #dc3545; color: white; font-size: 0.8rem; }
-.login-welcome {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 50vh;
-}
-.welcome-card {
-  text-align: center;
-  background: white;
-  padding: 40px;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-.loading-screen { text-align: center; padding: 50px; }
+/* Importamos el CSS global para toda la aplicación */
+@import './assets/dashboard.css';
 </style>

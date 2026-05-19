@@ -16,5 +16,5 @@ public class EstadoProyecto {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String nombre; //"En Planificación", "En Ejecución", "Finalizado"
+    private String nombre; // "En Planificación", "En Ejecución", "Finalizado"
 }

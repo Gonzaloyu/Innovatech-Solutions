@@ -1,4 +1,4 @@
-package com.innovatech.backend_gestion.model; 
+package com.innovatech.backend_gestion.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "clientes")
-@Data //Getters, Setters y toString
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Cliente {
@@ -22,9 +22,9 @@ public class Cliente {
     @Column(name = "rut_empresa", nullable = false, unique = true)
     private String rutEmpresa;
 
-    @Column(name = "contacto", nullable = false)
+    @Column(nullable = false)
     private String contacto;
-    
+
     @Column(name = "email_contacto")
     private String emailContacto;
 }

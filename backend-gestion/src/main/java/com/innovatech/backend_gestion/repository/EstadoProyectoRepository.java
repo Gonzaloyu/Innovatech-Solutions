@@ -6,5 +6,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface EstadoProyectoRepository extends JpaRepository<EstadoProyecto, Long> {
-    // Aquí podemos agregar métodos de búsqueda personalizados después
 }

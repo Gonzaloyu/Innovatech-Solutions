@@ -3,9 +3,22 @@
     <h3>Registrar Empleado</h3>
     <form @submit.prevent="guardarEmpleado">
       <input v-model="nuevoEmpleado.nombre" placeholder="Nombre Completo" required />
-      <input v-model="nuevoEmpleado.cargo" placeholder="Cargo (Ej: Arquitecto)" required />
-      <input v-model="nuevoEmpleado.departamento" placeholder="Departamento" required />
-      <input v-model="nuevoEmpleado.salario" type="number" placeholder="Salario" required />
+      <input v-model="nuevoEmpleado.email" type="email" placeholder="Email" required />
+
+      <select v-model="nuevoEmpleado.departamento.id" required>
+        <option disabled value="">Seleccionar Departamento</option>
+        <option value="1">TI</option>
+        <option value="2">Ventas</option>
+        <option value="3">Consultoría</option>
+      </select>
+
+      <select v-model="nuevoEmpleado.cargo.id" required>
+        <option disabled value="">Seleccionar Cargo</option>
+        <option value="1">Desarrollador Junior</option>
+        <option value="2">Desarrollador Senior</option>
+        <option value="3">Arquitecto</option>
+      </select>
+
       <button type="submit" class="btn-empleado">Registrar Empleado</button>
     </form>
   </div>
@@ -19,19 +32,23 @@ export default {
     return {
       nuevoEmpleado: {
         nombre: '',
-        cargo: '',
-        departamento: '',
-        salario: null
+        email: '',
+        departamento: { id: '' },
+        cargo: { id: '' }
       }
     };
   },
   methods: {
     async guardarEmpleado() {
       try {
-        await api.createEmployee(this.nuevoEmpleado);
+        await api.createEmpleado(this.nuevoEmpleado);
         alert('Empleado registrado con éxito');
         this.$emit('empleado-creado');
-        this.nuevoEmpleado = { nombre: '', cargo: '', departamento: '', salario: null };
+        this.nuevoEmpleado = {
+          nombre: '', email: '',
+          departamento: { id: '' },
+          cargo: { id: '' }
+        };
       } catch (error) {
         alert('Error: ' + (error.response?.data?.error || 'Servicio caído'));
       }

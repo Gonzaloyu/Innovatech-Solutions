@@ -11,15 +11,20 @@ public class Tarea {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String nombre;
-    
+
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    // Una tarea pertenece a un Proyecto
     @ManyToOne
     @JoinColumn(name = "proyecto_id", nullable = false)
     private Proyecto proyecto;
-    
-    private Long empleadoId; 
+
+    //llama a empleado de backend-analitico
+    private Long empleadoId;
+
+    @ManyToOne
+    @JoinColumn(name = "estado_id")
+    private EstadoProyecto estado;
 }

@@ -26,21 +26,18 @@ public class Proyecto {
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
 
-    // Un proyecto pertenece a UN cliente 
-    //  (Muchos proyectos -> Un cliente)
     @ManyToOne
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    // Un proyecto tiene UN estado 
-    // (Muchos proyectos -> Un estado)
     @ManyToOne
     @JoinColumn(name = "estado_id", nullable = false)
     private EstadoProyecto estado;
 
-    // Un proyecto pertenece a UNA categoría 
-    // (Muchos proyectos -> Una categoría)
     @ManyToOne
     @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
+
+    @Column(name = "empleado_id")
+    private Long empleadoId;
 }

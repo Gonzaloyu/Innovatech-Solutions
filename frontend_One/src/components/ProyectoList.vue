@@ -1,13 +1,17 @@
 <template>
   <div class="card">
     <h2>Gestión de Proyectos</h2>
-    <div v-if="loading">Cargando proyectos...</div>
+    
+    <div v-if="loading" class="spinner"></div>
+    
     <div v-else-if="error" class="error">{{ error }}</div>
     <ul v-else>
-      <li v-for="project in projects" :key="project.id">
-        <strong>{{ project.name }}</strong> - Estado: {{ project.status }}
+      <li v-for="proyecto in proyectos" :key="proyecto.id">
+        <strong>{{ proyecto.nombre }}</strong>
+        — Estado: {{ proyecto.estado?.nombre }}
+        — Cliente: {{ proyecto.cliente?.nombreEmpresa }}
       </li>
-      <li v-if="projects.length === 0">No hay proyectos registrados.</li>
+      <li v-if="proyectos.length === 0">No hay proyectos registrados.</li>
     </ul>
   </div>
 </template>
@@ -16,18 +20,17 @@
 import { ref, onMounted } from 'vue';
 import api from '../services/api';
 
-const projects = ref([]);
+const proyectos = ref([]);
 const loading = ref(true);
 const error = ref(null);
 
 onMounted(async () => {
   try {
-    const response = await api.getProjects();
-    // Validamos si el BFF nos mandó el error del Circuit Breaker
+    const response = await api.getProyectos();
     if (response.data.error) {
       error.value = response.data.error;
     } else {
-      projects.value = response.data;
+      proyectos.value = response.data;
     }
   } catch (err) {
     error.value = 'Error al conectar con el BFF.';
