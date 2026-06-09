@@ -7,16 +7,16 @@
 
       <select v-model="nuevoEmpleado.departamento.id" required>
         <option disabled value="">Seleccionar Departamento</option>
-        <option value="1">TI</option>
-        <option value="2">Ventas</option>
+        <option value="1">Gestion</option>
+        <option value="2">Desarrollo</option>
         <option value="3">Consultoría</option>
       </select>
 
       <select v-model="nuevoEmpleado.cargo.id" required>
         <option disabled value="">Seleccionar Cargo</option>
-        <option value="1">Desarrollador Junior</option>
+        <option value="1">Administrador</option>
         <option value="2">Desarrollador Senior</option>
-        <option value="3">Arquitecto</option>
+        <option value="3">Testing</option>
       </select>
 
       <button type="submit" class="btn-empleado">Registrar Empleado</button>

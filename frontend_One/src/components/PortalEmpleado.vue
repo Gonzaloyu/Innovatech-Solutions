@@ -56,7 +56,7 @@
             <div v-if="p.estado?.nombre !== 'Finalizado'" class="proyecto-acciones">
               <select v-model="cambios[p.id]">
                 <option disabled value="">Cambiar estado...</option>
-                <option value="2">En Ejecución</option>
+                <option value="2">En Ejecucion</option>
                 <option value="3">Finalizado</option>
               </select>
               <button 

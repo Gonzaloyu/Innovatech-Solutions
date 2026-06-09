@@ -29,7 +29,7 @@
           </div>
           <div class="kpi-card blue">
             <p class="kpi-numero">{{ kpis.proyectosEnEjecucion }}</p>
-            <p class="kpi-label">En Ejecución</p>
+            <p class="kpi-label">En Ejecucion</p>
           </div>
           <div class="kpi-card red">
             <p class="kpi-numero">{{ kpis.proyectosAtrasados }}</p>
@@ -88,7 +88,7 @@
                   <tr>
                     <th>Nombre</th>
                     <th>Estado</th>
-                    <th>Categoría</th>
+                    <th>Categoria</th>
                     <th>Cliente</th>
                     <th>Fecha Inicio</th>
                     <th>Fecha Fin</th>

@@ -9,22 +9,22 @@
 
       <select v-model="nuevoProyecto.estado.id" required>
         <option disabled value="">Seleccionar Estado</option>
-        <option :value="1">En Planificación</option>
-        <option :value="2">En Ejecución</option>
+        <option :value="1">En Planificacion</option>
+        <option :value="2">En Ejecucion</option>
         <option :value="3">Finalizado</option>
       </select>
 
       <select v-model="nuevoProyecto.categoria.id" required>
         <option disabled value="">Seleccionar Categoría</option>
-        <option :value="1">Desarrollo</option>
-        <option :value="2">Infraestructura</option>
-        <option :value="3">Consultoría</option>
+        <option :value="1">Gestion</option>
+        <option :value="2">Desarrollo</option>
+        <option :value="3">Consultoria</option>
       </select>
 
       <select v-model="nuevoProyecto.cliente.id" required>
         <option disabled value="">Seleccionar Cliente</option>
-        <option :value="1">Empresa Demo 1</option>
-        <option :value="2">Empresa Demo 2</option>
+        <option :value="1">Empresa 1</option>
+        <option :value="2">Empresa 2</option>
       </select>
 
       <!-- Selector de empleado -->
