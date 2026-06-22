@@ -331,3 +331,21 @@
   padding: 2rem;
   text-align: center;
 }
+
+/* ProyectoForm.vue */
+.campo-grupo {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.campo-grupo label {
+  margin-bottom: 5px;
+  font-weight: bold;
+  font-size: 14px;
+  color: #333;
+}
+
+.btn-proyecto {
+  margin-top: 10px;
+}

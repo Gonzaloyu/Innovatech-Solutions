@@ -2,38 +2,60 @@
   <div class="form-container">
     <h3>Registrar Nuevo Proyecto</h3>
     <form @submit.prevent="guardarProyecto">
-      <input v-model="nuevoProyecto.nombre" placeholder="Nombre del Proyecto" required />
-      <textarea v-model="nuevoProyecto.descripcion" placeholder="Descripción"></textarea>
-      <input v-model="nuevoProyecto.fechaInicio" type="date" required />
-      <input v-model="nuevoProyecto.fechaFin" type="date" required />
+      
+      <div class="campo-grupo">
+        <label for="nombre">Nombre del Proyecto</label>
+        <input id="nombre" v-model="nuevoProyecto.nombre" placeholder="Ej. Rediseño web" required />
+      </div>
 
-      <select v-model="nuevoProyecto.estado.id" required>
-        <option disabled value="">Seleccionar Estado</option>
-        <option :value="1">En Planificación</option>
-        <option :value="2">En Ejecución</option>
-        <option :value="3">Finalizado</option>
-      </select>
+      <div class="campo-grupo">
+        <textarea v-model="nuevoProyecto.descripcion" placeholder="Descripción"></textarea>
+      </div>
+      
+      <div class="campo-grupo">
+        <label for="fechaInicio">Fecha Inicio</label>
+        <input id="fechaInicio" v-model="nuevoProyecto.fechaInicio" type="date" required />
+      </div>
 
-      <select v-model="nuevoProyecto.categoria.id" required>
-        <option disabled value="">Seleccionar Categoría</option>
-        <option :value="1">Desarrollo</option>
-        <option :value="2">Infraestructura</option>
-        <option :value="3">Consultoría</option>
-      </select>
+      <div class="campo-grupo">
+        <label for="fechaFin">Fecha Fin</label>
+        <input id="fechaFin" v-model="nuevoProyecto.fechaFin" type="date" required />
+      </div>
 
-      <select v-model="nuevoProyecto.cliente.id" required>
-        <option disabled value="">Seleccionar Cliente</option>
-        <option :value="1">Empresa Demo 1</option>
-        <option :value="2">Empresa Demo 2</option>
-      </select>
+      <div class="campo-grupo">
+        <select v-model="nuevoProyecto.estado.id" required>
+          <option disabled value="">Seleccionar Estado</option>
+          <option :value="1">En Planificación</option>
+          <option :value="2">En Ejecución</option>
+          <option :value="3">Finalizado</option>
+        </select>
+      </div>
 
-      <!-- Selector de empleado -->
-      <select v-model="nuevoProyecto.empleadoId">
-        <option :value="null">Sin empleado asignado</option>
-        <option v-for="emp in empleados" :key="emp.id" :value="emp.id">
-          {{ emp.nombre }} — {{ emp.departamento?.nombre }}
-        </option>
-      </select>
+      <div class="campo-grupo">
+        <select v-model="nuevoProyecto.categoria.id" required>
+          <option disabled value="">Seleccionar Categoría</option>
+          <option :value="1">Desarrollo</option>
+          <option :value="2">Infraestructura</option>
+          <option :value="3">Consultoría</option>
+        </select>
+      </div>
+
+      <div class="campo-grupo">
+        <select v-model="nuevoProyecto.cliente.id" required>
+          <option disabled value="">Seleccionar Cliente</option>
+          <option :value="1">Empresa Demo 1</option>
+          <option :value="2">Empresa Demo 2</option>
+        </select>
+      </div>
+
+      <div class="campo-grupo">
+        <select v-model="nuevoProyecto.empleadoId">
+          <option :value="null">Sin empleado asignado</option>
+          <option v-for="emp in empleados" :key="emp.id" :value="emp.id">
+            {{ emp.nombre }} — {{ emp.departamento?.nombre }}
+          </option>
+        </select>
+      </div>
 
       <button type="submit" class="btn-proyecto">Guardar Proyecto</button>
     </form>
@@ -52,7 +74,7 @@ export default {
         descripcion: '',
         fechaInicio: '',
         fechaFin: '',
-        estado: { id: '' },     
+        estado: { id: '' },      
         categoria: { id: '' },
         cliente: { id: '' },    
         empleadoId: null
@@ -95,3 +117,4 @@ export default {
   }
 };
 </script>
+
