@@ -5,11 +5,20 @@
       <p>Plataforma Inteligente de Gestión Integral</p>
       <div v-if="isAuthenticated" class="user-nav">
         <span class="user-name">Hola, {{ user?.name }}</span>
-        <button @click="vistaActual = 'portal'" class="btn-portal">
+        
+        <button v-if="vistaActual !== 'dashboard'" @click="vistaActual = 'dashboard'" class="btn-volver" style="padding: 6px 14px; font-size: 0.85rem;">
+          Volver al Inicio
+        </button>
+
+        <button v-if="vistaActual !== 'planning'" @click="vistaActual = 'planning'" class="btn-proyecto" style="padding: 6px 14px; font-size: 0.85rem;">
+          Planificación Admin
+        </button>
+
+        <button v-if="vistaActual !== 'portal'" @click="vistaActual = 'portal'" class="btn-portal" style="padding: 6px 14px; font-size: 0.85rem;">
           Portal Empleado
         </button>
-        <button @click="logout({ logoutParams: { returnTo: window.location.origin } })"
-                class="auth-btn logout">
+
+        <button @click="logout({ logoutParams: { returnTo: window.location.origin } })" class="auth-btn logout">
           Cerrar Sesión
         </button>
       </div>
@@ -145,6 +154,13 @@
         @volver="vistaActual = 'dashboard'"
       />
 
+      <AdminPlanning 
+        v-else-if="vistaActual === 'planning'"
+        :proyectos="proyectosParaPlanning"
+        :empleados="empleados"
+        @empleado-asignado="cargarDatos"
+      />
+
     </template>
 
     <main v-else class="login-welcome">
@@ -166,14 +182,16 @@
 <script>
 import './assets/dashboard.css';
 import { useAuth0 } from 'libreria_vue_auth';
+import { toRaw } from 'vue'; // Importado para limpiar la consola
 import api from './services/api';
 import ProyectoForm from './components/ProyectoForm.vue';
 import EmpleadoForm from './components/EmpleadoForm.vue';
 import PortalEmpleado from './components/PortalEmpleado.vue';
+import AdminPlanning from './components/AdminPlanning.vue'; // Componente re-importado
 
 export default {
   name: 'App',
-  components: { ProyectoForm, EmpleadoForm, PortalEmpleado },
+  components: { ProyectoForm, EmpleadoForm, PortalEmpleado, AdminPlanning },
   setup() {
     const { loginWithRedirect, logout, user, isAuthenticated, isLoading } = useAuth0();
     return { loginWithRedirect, logout, user, isAuthenticated, isLoading };
@@ -187,6 +205,16 @@ export default {
       modalActivo: null
     };
   },
+  computed: {
+    // Computada restaurada para pasar los datos limpios al AdminPlanning
+    proyectosParaPlanning() {
+      return this.proyectos.map(p => ({
+        ...p,
+        estado: p.estado && typeof p.estado === 'object' ? p.estado.nombre : (p.estado || 'En Planificación'),
+        responsable: p.responsable || 'Sin asignar'
+      }));
+    }
+  },
   methods: {
     async cargarDatos() {
       if (!this.isAuthenticated) return;
@@ -196,9 +224,13 @@ export default {
           api.getEmpleados(),
           api.getKpis()
         ]);
-        this.proyectos = resProyectos.data.error ? [] : resProyectos.data;
-        this.empleados = resEmpleados.data.error ? [] : resEmpleados.data;
-        this.kpis      = resKpis.data.error      ? null : resKpis.data;
+        
+        this.proyectos = resProyectos?.data?.error ? [] : (resProyectos?.data || resProyectos || []);
+        this.empleados = resEmpleados?.data?.error ? [] : (resEmpleados?.data || resEmpleados || []);
+        this.kpis      = resKpis?.data?.error      ? null : (resKpis?.data || resKpis || null);
+
+        // Consola limpia usando toRaw sin bucles reactivos
+        console.log("Empleados cargados en App.vue:", toRaw(this.empleados));
       } catch (error) {
         console.error('Error al cargar datos:', error);
       }
@@ -219,9 +251,8 @@ export default {
     }
   }
 };
-
 </script>
+
 <style>
-/* Importamos el CSS global para toda la aplicación */
 @import './assets/dashboard.css';
 </style>

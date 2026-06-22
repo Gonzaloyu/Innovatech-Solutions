@@ -20,7 +20,6 @@
     </div>
 
     <div class="main-layout">
-
       <div class="projects-sidebar">
         <div class="sidebar-header">
           <h3>Proyectos</h3>
@@ -77,16 +76,14 @@
         </div>
 
         <div class="tab-content">
-
           <div v-if="pestañaActiva === 'Equipo'">
             <form @submit.prevent="asignarTrabajador" class="task-inline-form">
-              <select v-model.number="nuevoMiembro.empleadoId" class="select-ms" required>
+              <select v-model="nuevoMiembro.empleadoId" class="select-ms" required>
                 <option value="" disabled selected>Seleccionar Empleado...</option>
                 <option v-for="emp in empleados" :key="emp.id" :value="emp.id">
                   {{ emp.nombre }} ({{ emp.cargo?.nombre || 'Sin Cargo' }})
                 </option>
               </select>
-
               <button type="submit" class="btn-submit-task" :disabled="cargandoAsignaciones">Asignar</button>
             </form>
 
@@ -115,7 +112,7 @@
                     <td>{{ member.empleado?.email || 'N/A' }}</td>
                     <td><span class="ms-badge">{{ member.rol || 'Desarrollador' }}</span></td>
                     <td>
-                      <button @click="removerTrabajador(member.id)" class="btn-delete-task">✕</button>
+                      <button type="button" @click="removerTrabajador(member.id)" class="btn-delete-task">✕</button>
                     </td>
                   </tr>
                 </tbody>
@@ -123,7 +120,7 @@
             </div>
           </div>
 
-          <div class="placeholder-tab-content" v-else-if="pestañaActiva === 'Tareas'">
+          <div v-else-if="pestañaActiva === 'Tareas'" class="placeholder-tab-content">
             <form @submit.prevent="agregarTarea" class="task-form-grid">
               <input
                 type="text"
@@ -132,7 +129,7 @@
                 required
                 class="input-task-name"
               />
-              <select v-model.number="nuevaTarea.asignacionId" class="select-ms" required :disabled="asignacionesActuales.length === 0">
+              <select v-model="nuevaTarea.asignacionId" class="select-ms" required :disabled="asignacionesActuales.length === 0">
                 <option value="" disabled selected>
                   {{ asignacionesActuales.length === 0 ? 'Sin equipo asignado aún' : 'Trabajador asignado...' }}
                 </option>
@@ -192,20 +189,19 @@
                     <td>{{ formatearFecha(tarea.fechaInicio) }}</td>
                     <td :class="{ 'date-alert': esAtrasado(tarea.fechaLimite) && !tarea.completada }">{{ formatearFecha(tarea.fechaLimite) }}</td>
                     <td>
-                      <button @click="eliminarTarea(tarea.id)" class="btn-delete-task">✕</button>
+                      <button type="button" @click="eliminarTarea(tarea.id)" class="btn-delete-task">✕</button>
                     </td>
                   </tr>
                 </tbody>
               </table>
-
             </div>
           </div>
 
-          <div v-if="pestañaActiva === 'Costos'" class="placeholder-tab-content">
+          <div v-else-if="pestañaActiva === 'Costos'" class="placeholder-tab-content">
             <h4>Presupuesto de Infraestructura y Desarrollo</h4>
-            <div class="cost-row">
+            <div class="cost-row" style="display: flex; gap: 10px; align-items: center;">
               <label>Presupuesto Estimado (USD):</label>
-              <input type="number" v-model.number="proyectoSeleccionado.costo" style="width: 150px; padding: 6px;" />
+              <input type="number" v-model.number="proyectoSeleccionado.costo" style="width: 150px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;" />
             </div>
             <p style="font-size: 0.9rem; color: #64748b; margin-top: 10px;">
               Costo calculado para contenedores en microservicios y bases de datos Dockerizadas.
@@ -215,20 +211,18 @@
           <div v-else-if="pestañaActiva === 'Historial'" class="placeholder-tab-content">
             <h4>Bitácora de Cambios Recientes</h4>
             <div class="logs-container">
-              <p v-if="!proyectoSeleccionado.logs || proyectoSeleccionado.logs.length === 0" class="empty-msg">No hay registros de actividad.</p>
+              <p v-if="!proyectoSeleccionado.logs || proyectoSeleccionado.logs.length === 0" class="empty-msg" style="color: #94a3b8; font-style: italic; padding: 10px 0;">No hay registros de actividad.</p>
               <div v-for="(log, idx) in proyectoSeleccionado.logs" :key="idx" class="log-entry">
                 <span class="log-time">[{{ log.hora }}]</span> {{ log.mensaje }}
               </div>
             </div>
           </div>
-
         </div>
       </div>
 
       <div class="planning-detail empty-state" v-else>
         Selecciona un proyecto de la lista izquierda para ver e iniciar su planificación.
       </div>
-
     </div>
   </div>
 </template>
@@ -250,46 +244,37 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['empleado-assigned', 'empleado-asignado']);
+const emit = defineEmits(['empleado-asignado']);
 
 const pestañaActiva = ref('Equipo');
 const proyectoSeleccionado = ref(null);
 const proyectosLocales = ref([]);
 
-// Las asignaciones del proyecto SELECCIONADO viven aparte de proyectosLocales.
-// Ya no dependen de lo que venga (o no venga) en la prop "proyectos".
 const asignacionesActuales = ref([]);
 const cargandoAsignaciones = ref(false);
 
 const nuevaTarea = ref({ nombre: '', asignacionId: '', fechaInicio: '', fechaLimite: '' });
 const nuevoMiembro = ref({ empleadoId: '' });
 
-// --- LOGICA DE ASIGNACIONES (EQUIPO) ---
-// Se define ANTES del watch de abajo porque ese watch usa { immediate: true }
-// y se ejecuta apenas se monta el componente: si cargarAsignaciones estuviera
-// declarada más abajo, todavía no existiría como variable inicializada
-// (con const/función flecha en <script setup> no hay hoisting de la asignación).
-
-// Trae las asignaciones reales del backend para el proyecto dado,
-// y las cruza con la lista de empleados (ya cargada en el padre) para
-// mostrar nombre/email/cargo, ya que Asignacion.java solo guarda IDs.
+// 1. Cargar asignaciones desde el backend (Declarada primero)
 const cargarAsignaciones = async (proyectoId) => {
   if (!proyectoId) return;
   cargandoAsignaciones.value = true;
   try {
     const respuesta = await api.getAsignacionesPorProyecto(proyectoId);
-    const lista = respuesta.data || [];
+    const lista = respuesta?.data || [];
 
     asignacionesActuales.value = lista.map(a => {
+      if (!a) return null;
       const emp = props.empleados.find(e => e.id === a.empleadoId);
       return {
         id: a.id,
-        rol: a.rol,
+        rol: a.rol || 'Desarrollador',
         empleado: emp
           ? { id: emp.id, nombre: emp.nombre, email: emp.email }
           : { id: a.empleadoId, nombre: 'Empleado', email: 'N/A' }
       };
-    });
+    }).filter(item => item !== null);
   } catch (error) {
     console.error('Error al cargar asignaciones del proyecto:', error);
     asignacionesActuales.value = [];
@@ -298,7 +283,7 @@ const cargarAsignaciones = async (proyectoId) => {
   }
 };
 
-// --- Sincroniza la lista de proyectos (sin tocar las asignaciones) ---
+// 2. Watch de sincronización (Ahora se ejecuta de forma segura abajo de cargarAsignaciones)
 watch(() => props.proyectos, (nuevosProyectos) => {
   const idPrevio = proyectoSeleccionado.value?.id;
 
@@ -307,8 +292,6 @@ watch(() => props.proyectos, (nuevosProyectos) => {
     costo: p.costo || 0,
     tareas: p.tareas || [],
     logs: p.logs || []
-    // Nota: ya no leemos p.asignaciones / p.empleados aquí.
-    // El equipo se carga aparte vía cargarAsignaciones().
   }));
 
   if (proyectosLocales.value.length > 0) {
@@ -318,15 +301,13 @@ watch(() => props.proyectos, (nuevosProyectos) => {
     } else {
       const mapeado = proyectosLocales.value.find(p => p.id === idPrevio);
       if (mapeado) {
-        // Reemplaza la referencia del objeto seleccionado por la versión actualizada,
-        // pero esto YA NO dispara una recarga de asignaciones (mismo id = mismo equipo).
         proyectoSeleccionado.value = mapeado;
       }
     }
   }
 }, { immediate: true, deep: true });
 
-// --- COMPUTED PROPERTIES ---
+// KPIs Reactivos Computados
 const totalAtrasados = computed(() => {
   return proyectosLocales.value.filter(p => esAtrasado(p.fechaFin)).length;
 });
@@ -341,7 +322,7 @@ const totalCostos = computed(() => {
   return proyectosLocales.value.reduce((acc, p) => acc + (p.costo || 0), 0);
 });
 
-// --- MÉTODOS ---
+// Métodos de control y formato de fechas
 const seleccionarProyecto = (proyecto) => {
   if (proyectoSeleccionado.value?.id === proyecto.id) return;
   proyectoSeleccionado.value = proyecto;
@@ -370,37 +351,39 @@ const registrarLog = (proyecto, mensaje) => {
   proyecto.logs.unshift({ hora: horaStr, mensaje });
 };
 
-// --- ASIGNAR / REMOVER TRABAJADOR (usan cargarAsignaciones, definida arriba) ---
-
+// Acciones del equipo (API Backend)
 const asignarTrabajador = async () => {
   if (!nuevoMiembro.value.empleadoId || !proyectoSeleccionado.value) return;
 
   const idNumerico = Number(nuevoMiembro.value.empleadoId);
   const emp = props.empleados.find(e => e.id === idNumerico);
   const nombreEmpleado = emp ? emp.nombre : 'Empleado';
-  const rolPorDefecto = emp?.cargo?.nombre || 'Colaborador';
+  const rolPorDefecto = emp && emp.cargo && emp.cargo.nombre ? emp.cargo.nombre : 'Colaborador';
 
   try {
-    await api.createAsignacion({
+    const respuesta = await api.createAsignacion({
       proyectoId: Number(proyectoSeleccionado.value.id),
       empleadoId: idNumerico,
       rol: rolPorDefecto
     });
 
-    // En vez de "parchear" el array local a mano, recargamos desde el backend.
-    // Esto es la fuente de la verdad y ya no depende de la prop "proyectos".
+    if (respuesta && respuesta.data && respuesta.data.error) {
+      alert(`Aviso del Sistema: ${respuesta.data.error}`);
+      return;
+    }
+
+    nuevoMiembro.value.empleadoId = '';
     await cargarAsignaciones(proyectoSeleccionado.value.id);
-
-    registrarLog(proyectoSeleccionado.value, `Asignó a ${nombreEmpleado} al equipo.`);
-    nuevoMiembro.value = { empleadoId: '' };
-
-    // Avisamos al padre para que refresque KPIs / lista de proyectos.
-    // Ya no nos afecta aunque el padre recargue "proyectos", porque
-    // asignacionesActuales vive fuera de ese flujo.
+    
+    if (proyectoSeleccionado.value) {
+      if (!proyectoSeleccionado.value.logs) proyectoSeleccionado.value.logs = [];
+      registrarLog(proyectoSeleccionado.value, `Asignó a ${nombreEmpleado} al equipo.`);
+    }
+    
     emit('empleado-asignado');
   } catch (error) {
     console.error('Error al guardar la asignación:', error);
-    alert('No se pudo guardar la asignación del trabajador en el backend.');
+    alert('No se pudo procesar la asignación del trabajador.');
   }
 };
 
@@ -409,7 +392,9 @@ const removerTrabajador = async (asignacionId) => {
   try {
     await api.deleteAsignacion(asignacionId);
     await cargarAsignaciones(proyectoSeleccionado.value.id);
-    registrarLog(proyectoSeleccionado.value, `Removió una asignación del equipo`);
+    if (proyectoSeleccionado.value) {
+      registrarLog(proyectoSeleccionado.value, `Removió una asignación del equipo`);
+    }
     emit('empleado-asignado');
   } catch (error) {
     console.error('Error al remover:', error);
@@ -417,7 +402,7 @@ const removerTrabajador = async (asignacionId) => {
   }
 };
 
-// --- LOGICA DE TAREAS ---
+// Gestión de tareas locales
 const agregarTarea = () => {
   if (nuevaTarea.value.fechaInicio && nuevaTarea.value.fechaLimite &&
       nuevaTarea.value.fechaLimite < nuevaTarea.value.fechaInicio) {
@@ -446,8 +431,6 @@ const agregarTarea = () => {
   nuevaTarea.value = { nombre: '', asignacionId: '', fechaInicio: '', fechaLimite: '' };
 };
 
-// Muestra el nombre del trabajador de la tarea. Si esa persona ya fue
-// removida del Equipo, cae al nombre guardado al momento de crear la tarea.
 const nombreTrabajadorTarea = (tarea) => {
   const enEquipo = asignacionesActuales.value.find(a => a.id === tarea.asignacionId);
   if (enEquipo) return enEquipo.empleado?.nombre || enEquipo.nombre || 'Colaborador';
@@ -459,340 +442,4 @@ const eliminarTarea = (idTarea) => {
 };
 </script>
 
-<style scoped>
-/* Los estilos se mantienen exactamente iguales */
-.planning-workspace {
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  padding: 1.5rem;
-  background-color: #f8fafc;
-  min-height: 80vh;
-}
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.25rem;
-  margin-bottom: 2rem;
-}
-.kpi-box {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-.kpi-val {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #1e293b;
-}
-.kpi-lbl {
-  font-size: 0.85rem;
-  color: #64748b;
-  margin-top: 0.25rem;
-}
-.text-danger .kpi-val { color: #ef4444; }
-.text-success .kpi-val { color: #10b981; }
-.main-layout {
-  display: flex;
-  gap: 1.5rem;
-  align-items: flex-start;
-}
-.projects-sidebar {
-  width: 320px;
-  flex-shrink: 0;
-}
-.sidebar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-.sidebar-header h3 {
-  font-size: 1.15rem;
-  color: #334155;
-  margin: 0;
-}
-.projects-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-.project-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.project-card:hover {
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-}
-.project-card.is-active {
-  border: 2px solid #0f172a;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-.card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-}
-.card-top h4 {
-  margin: 0;
-  font-size: 1rem;
-  color: #1e293b;
-}
-.responsable-text {
-  margin: 6px 0;
-  font-size: 0.85rem;
-  color: #64748b;
-}
-.dates-text {
-  margin: 0;
-  font-size: 0.8rem;
-  color: #475569;
-}
-.date-alert {
-  color: #b91c1c;
-  font-weight: 500;
-}
-.status-pill {
-  font-size: 0.75rem;
-  padding: 3px 8px;
-  border-radius: 20px;
-  font-weight: 500;
-}
-.status-pill.en-ejecución {
-  background-color: #e0f2fe;
-  color: #0369a1;
-}
-.status-pill.en-planificación {
-  background-color: #f1f5f9;
-  color: #475569;
-}
-.status-pill.big {
-  font-size: 0.85rem;
-  padding: 4px 12px;
-}
-.planning-detail {
-  flex: 1;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-  min-height: 450px;
-}
-.detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-.detail-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #0f172a;
-}
-.alert-banner {
-  background-color: #fef2f2;
-  border: 1px solid #fee2e2;
-  color: #991b1b;
-  padding: 10px 14px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  margin-bottom: 1.25rem;
-  font-weight: 500;
-}
-.tabs-bar {
-  display: flex;
-  gap: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  margin-bottom: 1.25rem;
-}
-.tab-btn {
-  background: none;
-  border: none;
-  padding: 8px 4px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #64748b;
-  cursor: pointer;
-  position: relative;
-}
-.tab-btn:hover {
-  color: #1e293b;
-}
-.tab-btn.active-tab {
-  color: #000;
-  font-weight: 600;
-  border-bottom: 2px solid #000;
-}
-.task-inline-form {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 1.25rem;
-}
-/* Igual que .task-inline-form pero permite que los campos bajen de línea
-   cuando no caben todos (ahora son más: nombre, MS, trabajador, 2 fechas, botón) */
-.task-form-grid {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 10px;
-  margin-bottom: 0.5rem;
-}
-.task-form-grid .input-task-name {
-  flex: 2;
-  min-width: 160px;
-}
-.task-form-grid .select-ms {
-  flex: 1;
-  min-width: 150px;
-}
-.date-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-  min-width: 130px;
-}
-.date-field-lbl {
-  font-size: 0.75rem;
-  color: #64748b;
-  font-weight: 500;
-}
-.form-hint {
-  font-size: 0.8rem;
-  color: #b45309;
-  background-color: #fffbeb;
-  border: 1px solid #fde68a;
-  padding: 6px 10px;
-  border-radius: 6px;
-  margin: 0 0 1.25rem 0;
-}
-.input-task-name {
-  flex: 2;
-  padding: 8px 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 0.9rem;
-}
-.select-ms {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  background-color: #fff;
-}
-.select-ms:disabled {
-  background-color: #f1f5f9;
-  color: #94a3b8;
-  cursor: not-allowed;
-}
-.input-task-date {
-  flex: 1;
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  box-sizing: border-box;
-}
-.btn-submit-task {
-  background-color: #000;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-.btn-submit-task:hover {
-  background-color: #1e293b;
-}
-.tasks-table-wrapper {
-  overflow-x: auto;
-}
-.planning-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-  font-size: 0.9rem;
-}
-.planning-table th {
-  background-color: #f8fafc;
-  color: #475569;
-  padding: 10px;
-  font-weight: 600;
-  border-bottom: 1px solid #e2e8f0;
-}
-.planning-table td {
-  padding: 12px 10px;
-  border-bottom: 1px solid #f1f5f9;
-  color: #334155;
-}
-.line-through {
-  text-decoration: line-through;
-  color: #94a3b8;
-}
-.ms-badge {
-  background-color: #f0fdf4;
-  color: #16a34a;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  border: 1px solid #bbf7d0;
-}
-.btn-delete-task {
-  background: none;
-  border: none;
-  color: #94a3b8;
-  cursor: pointer;
-  font-size: 1rem;
-}
-.btn-delete-task:hover {
-  color: #ef4444;
-}
-.placeholder-tab-content {
-  padding: 5px 0;
-}
-.placeholder-tab-content h4 {
-  margin-top: 0;
-  color: #1e293b;
-}
-.logs-container {
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 10px;
-  max-height: 200px;
-  overflow-y: auto;
-}
-.log-entry {
-  font-size: 0.85rem;
-  margin-bottom: 6px;
-  color: #475569;
-}
-.log-time {
-  color: #94a3b8;
-  font-weight: bold;
-}
-.empty-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #94a3b8;
-  font-style: italic;
-  padding: 2rem;
-  text-align: center;
-}
-</style>
+<style src="../assets/planning.css" scoped></style>

@@ -19,8 +19,16 @@ export default {
   getEmpleados()         { return apiClient.get('/empleados'); },
   createEmpleado(data)   { return apiClient.post('/empleados', data); },
 
-  // ASIGNACIONES
+  // ASIGNACIONES (¡MÉTODOS FALTANTES AGREGADOS!)
   createAsignacion(data) { return apiClient.post('/asignaciones', data); },
+  
+  getAsignacionesPorProyecto(proyectoId) { 
+    return apiClient.get(`/asignaciones/proyecto/${proyectoId}`); 
+  },
+  
+  deleteAsignacion(id) { 
+    return apiClient.delete(`/asignaciones/${id}`); 
+  },
 
   // KPIs y REPORTES (backend-reportes)
   getKpis()                     { return apiClient.get('/kpis'); },
