@@ -33,9 +33,10 @@ const fetchEmpleados                   = ()            => axios.get(`${ANALITICO
 const fetchEmpleadoPorId               = (id)          => axios.get(`${ANALITICO_URL}/empleados/${id}`).then(r => r.data);
 const saveEmpleado                     = (data)        => axios.post(`${ANALITICO_URL}/empleados`, data).then(r => r.data);
 
-const fetchAsignacionesPorProyecto     = (proyectoId)  => axios.get(`${ANALITICO_URL}/asignaciones/proyecto/${proyectoId}`).then(r => r.data);
-const saveAsignacion                   = (data)        => axios.post(`${ANALITICO_URL}/asignaciones`, data).then(r => r.data);
-const deleteAsignacion                 = (id)          => axios.delete(`${ANALITICO_URL}/asignaciones/${id}`).then(r => r.data);
+// ✅ FIX: Asignaciones apuntan a GESTION_URL (8081), no a ANALITICO_URL (8082)
+const fetchAsignacionesPorProyecto     = (proyectoId)  => axios.get(`${GESTION_URL}/asignaciones/proyecto/${proyectoId}`).then(r => r.data);
+const saveAsignacion                   = (data)        => axios.post(`${GESTION_URL}/asignaciones`, data).then(r => r.data);
+const deleteAsignacion                 = (id)          => axios.delete(`${GESTION_URL}/asignaciones/${id}`).then(r => r.data);
 
 const fetchKpis                        = ()            => axios.get(`${REPORTES_URL}/reportes/kpis`).then(r => r.data);
 const fetchEmpPorDepto                 = ()            => axios.get(`${REPORTES_URL}/reportes/empleados-por-departamento`).then(r => r.data);
@@ -161,7 +162,6 @@ app.post('/api/bff/proyectos', async (req, res) => {
   }
 });
 
-// FIX: ahora usa circuit breaker en lugar de axios directo
 app.get('/api/bff/proyectos/empleado/:empleadoId', async (req, res) => {
   try {
     const data = await proyectosPorEmpleadoBreaker.fire(req.params.empleadoId);
@@ -172,7 +172,6 @@ app.get('/api/bff/proyectos/empleado/:empleadoId', async (req, res) => {
   }
 });
 
-// FIX: ahora usa circuit breaker en lugar de axios directo
 app.patch('/api/bff/proyectos/:id/estado', async (req, res) => {
   try {
     const data = await proyectoPatchEstadoBreaker.fire({ id: req.params.id, body: req.body });
