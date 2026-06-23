@@ -3,15 +3,19 @@ const cors = require('cors');
 const axios = require('axios');
 const CircuitBreaker = require('opossum');
 
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+
 
 app.use(cors());
 app.use(express.json());
 
+
 const GESTION_URL   = process.env.GESTION_URL   || 'http://localhost:8081/api';
 const ANALITICO_URL = process.env.ANALITICO_URL || 'http://localhost:8082/api';
 const REPORTES_URL  = process.env.REPORTES_URL  || 'http://localhost:8083/api';
+
 
 const breakerOptions = {
   timeout: 5000,
@@ -19,29 +23,38 @@ const breakerOptions = {
   resetTimeout: 10000
 };
 
+
 // ==================== FUNCIONES CORE ====================
-const fetchProyectos                   = ()            => axios.get(`${GESTION_URL}/proyectos`).then(r => r.data);
+const fetchProyectos                 = ()            => axios.get(`${GESTION_URL}/proyectos`).then(r => r.data);
 const saveProyecto                     = (data)        => axios.post(`${GESTION_URL}/proyectos`, data).then(r => r.data);
 const fetchProyectosPorEmpleado        = (empleadoId)  => axios.get(`${GESTION_URL}/proyectos/empleado/${empleadoId}`).then(r => r.data);
 const patchProyectoEstado              = ({ id, body }) => axios.patch(`${GESTION_URL}/proyectos/${id}/estado`, body).then(r => r.data);
 
+
+// --- Tareas (Modificadas y Nuevas) ---
 const fetchTareas                      = ()            => axios.get(`${GESTION_URL}/tareas`).then(r => r.data);
 const fetchTareaPorId                  = (id)          => axios.get(`${GESTION_URL}/tareas/${id}`).then(r => r.data);
+const fetchTareasPorProyecto           = (proyectoId)  => axios.get(`${GESTION_URL}/tareas/proyecto/${proyectoId}`).then(r => r.data); // NUEVO
 const saveTarea                        = (data)        => axios.post(`${GESTION_URL}/tareas`, data).then(r => r.data);
+const updateTarea                      = ({ id, data }) => axios.put(`${GESTION_URL}/tareas/${id}`, data).then(r => r.data);       // NUEVO
+const deleteTarea                      = (id)          => axios.delete(`${GESTION_URL}/tareas/${id}`).then(r => r.data);           // NUEVO
+
 
 const fetchEmpleados                   = ()            => axios.get(`${ANALITICO_URL}/empleados`).then(r => r.data);
 const fetchEmpleadoPorId               = (id)          => axios.get(`${ANALITICO_URL}/empleados/${id}`).then(r => r.data);
 const saveEmpleado                     = (data)        => axios.post(`${ANALITICO_URL}/empleados`, data).then(r => r.data);
 
-// ✅ FIX: Asignaciones apuntan a GESTION_URL (8081), no a ANALITICO_URL (8082)
+
 const fetchAsignacionesPorProyecto     = (proyectoId)  => axios.get(`${GESTION_URL}/asignaciones/proyecto/${proyectoId}`).then(r => r.data);
 const saveAsignacion                   = (data)        => axios.post(`${GESTION_URL}/asignaciones`, data).then(r => r.data);
 const deleteAsignacion                 = (id)          => axios.delete(`${GESTION_URL}/asignaciones/${id}`).then(r => r.data);
+
 
 const fetchKpis                        = ()            => axios.get(`${REPORTES_URL}/reportes/kpis`).then(r => r.data);
 const fetchEmpPorDepto                 = ()            => axios.get(`${REPORTES_URL}/reportes/empleados-por-departamento`).then(r => r.data);
 const fetchProjPorEstado               = ()            => axios.get(`${REPORTES_URL}/reportes/proyectos-por-estado`).then(r => r.data);
 const fetchProjPorCat                  = ()            => axios.get(`${REPORTES_URL}/reportes/proyectos-por-categoria`).then(r => r.data);
+
 
 // ==================== CIRCUIT BREAKERS ====================
 const proyectosGetBreaker              = new CircuitBreaker(fetchProyectos,                breakerOptions);
@@ -49,42 +62,59 @@ const proyectosPostBreaker             = new CircuitBreaker(saveProyecto,       
 const proyectosPorEmpleadoBreaker      = new CircuitBreaker(fetchProyectosPorEmpleado,     breakerOptions);
 const proyectoPatchEstadoBreaker       = new CircuitBreaker(patchProyectoEstado,           breakerOptions);
 
+
+// --- Breakers de Tareas ---
 const tareasGetBreaker                 = new CircuitBreaker(fetchTareas,                   breakerOptions);
-const tareasPostBreaker                = new CircuitBreaker(saveTarea,                     breakerOptions);
 const tareaPorIdBreaker                = new CircuitBreaker(fetchTareaPorId,               breakerOptions);
+const tareasPorProyectoBreaker         = new CircuitBreaker(fetchTareasPorProyecto,        breakerOptions); // NUEVO
+const tareasPostBreaker                = new CircuitBreaker(saveTarea,                     breakerOptions);
+const tareaPutBreaker                  = new CircuitBreaker(updateTarea,                   breakerOptions); // NUEVO
+const tareaDeleteBreaker               = new CircuitBreaker(deleteTarea,                   breakerOptions); // NUEVO
+
 
 const empleadosGetBreaker              = new CircuitBreaker(fetchEmpleados,                breakerOptions);
 const empleadosPostBreaker             = new CircuitBreaker(saveEmpleado,                  breakerOptions);
 const empleadoPorIdBreaker             = new CircuitBreaker(fetchEmpleadoPorId,            breakerOptions);
 
+
 const asignacionesGetBreaker           = new CircuitBreaker(fetchAsignacionesPorProyecto,  breakerOptions);
 const asignacionPostBreaker            = new CircuitBreaker(saveAsignacion,                breakerOptions);
 const asignacionDeleteBreaker          = new CircuitBreaker(deleteAsignacion,              breakerOptions);
+
 
 const kpisBreaker                      = new CircuitBreaker(fetchKpis,                     breakerOptions);
 const empPorDeptoBreaker               = new CircuitBreaker(fetchEmpPorDepto,              breakerOptions);
 const projPorEstadoBreaker             = new CircuitBreaker(fetchProjPorEstado,            breakerOptions);
 const projPorCatBreaker                = new CircuitBreaker(fetchProjPorCat,               breakerOptions);
 
+
 // ==================== FALLBACKS ====================
 const fallback = (msg) => ({ error: msg });
+
 
 proyectosGetBreaker.fallback(()            => fallback('Servicio de Proyectos no disponible'));
 proyectosPostBreaker.fallback(()           => fallback('No se pudo guardar el Proyecto'));
 proyectosPorEmpleadoBreaker.fallback(()    => []);
 proyectoPatchEstadoBreaker.fallback(()     => fallback('No se pudo actualizar el estado del Proyecto'));
 
+
 tareasGetBreaker.fallback(()               => fallback('Servicio de Tareas no disponible'));
-tareasPostBreaker.fallback(()              => fallback('No se pudo guardar la Tarea'));
 tareaPorIdBreaker.fallback(()              => null);
+tareasPorProyectoBreaker.fallback(()       => []); // NUEVO
+tareasPostBreaker.fallback(()              => fallback('No se pudo guardar la Tarea'));
+tareaPutBreaker.fallback(()                => fallback('No se pudo actualizar la Tarea')); // NUEVO
+tareaDeleteBreaker.fallback(()             => fallback('No se pudo eliminar la Tarea'));   // NUEVO
+
 
 empleadosGetBreaker.fallback(()            => fallback('Servicio de Empleados no disponible'));
 empleadosPostBreaker.fallback(()           => fallback('No se pudo guardar el Empleado'));
 empleadoPorIdBreaker.fallback(()           => null);
 
+
 asignacionesGetBreaker.fallback(()         => []);
-asignacionPostBreaker.fallback((data)      => ({ ...data, error: 'Circuit Breaker: No se pudo procesar la asignación en el microservicio.' }));
+asignacionPostBreaker.fallback((data)      => ({ ...data, error: 'Circuit Breaker: No se pudo procesar la asignación.' }));
 asignacionDeleteBreaker.fallback(()        => fallback('No se pudo eliminar la Asignación'));
+
 
 kpisBreaker.fallback(() => ({
   totalProyectos: 0, totalEmpleados: 0,
@@ -95,6 +125,7 @@ empPorDeptoBreaker.fallback(()             => ({}));
 projPorEstadoBreaker.fallback(()           => ({}));
 projPorCatBreaker.fallback(()              => ({}));
 
+
 // ==================== LOGS DE MONITOREO ====================
 const logCircuit = (name, breaker) => {
   breaker.on('open',     () => console.warn(`[${name}] Circuit ABIERTO - servicio caído`));
@@ -102,13 +133,21 @@ const logCircuit = (name, breaker) => {
   breaker.on('close',    () => console.log(`[${name}] Circuit CERRADO - servicio recuperado`));
 };
 
+
 logCircuit('proyectos-GET',              proyectosGetBreaker);
 logCircuit('proyectos-POST',             proyectosPostBreaker);
 logCircuit('proyectos-por-empleado-GET', proyectosPorEmpleadoBreaker);
 logCircuit('proyectos-patch-estado',     proyectoPatchEstadoBreaker);
+
+
 logCircuit('tareas-GET',                 tareasGetBreaker);
-logCircuit('tareas-POST',                tareasPostBreaker);
 logCircuit('tarea-por-id-GET',           tareaPorIdBreaker);
+logCircuit('tareas-por-proyecto-GET',    tareasPorProyectoBreaker); // NUEVO
+logCircuit('tareas-POST',                tareasPostBreaker);
+logCircuit('tareas-PUT',                 tareaPutBreaker);          // NUEVO
+logCircuit('tareas-DELETE',              tareaDeleteBreaker);       // NUEVO
+
+
 logCircuit('empleados-GET',              empleadosGetBreaker);
 logCircuit('empleados-POST',             empleadosPostBreaker);
 logCircuit('empleado-por-id-GET',        empleadoPorIdBreaker);
@@ -120,6 +159,7 @@ logCircuit('emp-por-depto-GET',          empPorDeptoBreaker);
 logCircuit('proj-por-estado-GET',        projPorEstadoBreaker);
 logCircuit('proj-por-cat-GET',           projPorCatBreaker);
 
+
 // ==================== HEALTH CHECK ====================
 app.get('/health', (req, res) => {
   res.json({
@@ -128,17 +168,17 @@ app.get('/health', (req, res) => {
       proyectosGet:          proyectosGetBreaker.opened          ? 'OPEN' : 'CLOSED',
       proyectosPorEmpleado:  proyectosPorEmpleadoBreaker.opened  ? 'OPEN' : 'CLOSED',
       tareasGet:             tareasGetBreaker.opened             ? 'OPEN' : 'CLOSED',
+      tareasPorProyectoGet:  tareasPorProyectoBreaker.opened     ? 'OPEN' : 'CLOSED', // NUEVO
       empleadosGet:          empleadosGetBreaker.opened          ? 'OPEN' : 'CLOSED',
       asignacionesGet:       asignacionesGetBreaker.opened       ? 'OPEN' : 'CLOSED',
       kpisGet:               kpisBreaker.opened                  ? 'OPEN' : 'CLOSED',
-      empPorDeptoGet:        empPorDeptoBreaker.opened           ? 'OPEN' : 'CLOSED',
-      projPorEstadoGet:      projPorEstadoBreaker.opened         ? 'OPEN' : 'CLOSED',
-      projPorCatGet:         projPorCatBreaker.opened            ? 'OPEN' : 'CLOSED',
     }
   });
 });
 
+
 // ==================== ENDPOINTS API ====================
+
 
 // --- Proyectos ---
 app.get('/api/bff/proyectos', async (req, res) => {
@@ -151,6 +191,7 @@ app.get('/api/bff/proyectos', async (req, res) => {
   }
 });
 
+
 app.post('/api/bff/proyectos', async (req, res) => {
   try {
     const data = await proyectosPostBreaker.fire(req.body);
@@ -162,6 +203,7 @@ app.post('/api/bff/proyectos', async (req, res) => {
   }
 });
 
+
 app.get('/api/bff/proyectos/empleado/:empleadoId', async (req, res) => {
   try {
     const data = await proyectosPorEmpleadoBreaker.fire(req.params.empleadoId);
@@ -171,6 +213,7 @@ app.get('/api/bff/proyectos/empleado/:empleadoId', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener proyectos del empleado' });
   }
 });
+
 
 app.patch('/api/bff/proyectos/:id/estado', async (req, res) => {
   try {
@@ -183,6 +226,7 @@ app.patch('/api/bff/proyectos/:id/estado', async (req, res) => {
   }
 });
 
+
 // --- Tareas ---
 app.get('/api/bff/tareas', async (req, res) => {
   try {
@@ -193,6 +237,19 @@ app.get('/api/bff/tareas', async (req, res) => {
     res.status(500).json({ error: 'Error en BFF al obtener tareas' });
   }
 });
+
+
+// NUEVO: GET /api/bff/tareas/proyecto/:proyectoId
+app.get('/api/bff/tareas/proyecto/:proyectoId', async (req, res) => {
+  try {
+    const data = await tareasPorProyectoBreaker.fire(req.params.proyectoId);
+    res.json(data);
+  } catch (error) {
+    console.error('BFF Error tareas por proyecto GET:', error.message);
+    res.status(500).json({ error: 'Error en BFF al obtener tareas del proyecto' });
+  }
+});
+
 
 app.post('/api/bff/tareas', async (req, res) => {
   try {
@@ -205,6 +262,33 @@ app.post('/api/bff/tareas', async (req, res) => {
   }
 });
 
+
+// NUEVO: PUT /api/bff/tareas/:id (Para actualizar estado)
+app.put('/api/bff/tareas/:id', async (req, res) => {
+  try {
+    const data = await tareaPutBreaker.fire({ id: req.params.id, data: req.body });
+    if (data && data.error) return res.status(503).json(data);
+    res.json(data);
+  } catch (error) {
+    console.error('BFF Error tareas PUT:', error.message);
+    res.status(500).json({ error: 'Error en BFF al actualizar tarea' });
+  }
+});
+
+
+// NUEVO: DELETE /api/bff/tareas/:id (Para eliminar tareas con la X)
+app.delete('/api/bff/tareas/:id', async (req, res) => {
+  try {
+    const data = await tareaDeleteBreaker.fire(req.params.id);
+    if (data && data.error) return res.status(503).json(data);
+    res.json({ message: 'Tarea eliminada con éxito' });
+  } catch (error) {
+    console.error('BFF Error tareas DELETE:', error.message);
+    res.status(500).json({ error: 'Error en BFF al eliminar tarea' });
+  }
+});
+
+
 // --- Empleados ---
 app.get('/api/bff/empleados', async (req, res) => {
   try {
@@ -215,6 +299,7 @@ app.get('/api/bff/empleados', async (req, res) => {
     res.status(500).json({ error: 'Error en BFF al obtener empleados' });
   }
 });
+
 
 app.post('/api/bff/empleados', async (req, res) => {
   try {
@@ -227,6 +312,7 @@ app.post('/api/bff/empleados', async (req, res) => {
   }
 });
 
+
 app.get('/api/bff/empleados/:id', async (req, res) => {
   try {
     const data = await empleadoPorIdBreaker.fire(req.params.id);
@@ -237,6 +323,7 @@ app.get('/api/bff/empleados/:id', async (req, res) => {
     res.status(500).json({ error: 'Error en BFF al obtener empleado' });
   }
 });
+
 
 // --- Asignaciones ---
 app.get('/api/bff/asignaciones/proyecto/:proyectoId', async (req, res) => {
@@ -249,6 +336,7 @@ app.get('/api/bff/asignaciones/proyecto/:proyectoId', async (req, res) => {
   }
 });
 
+
 app.post('/api/bff/asignaciones', async (req, res) => {
   try {
     const data = await asignacionPostBreaker.fire(req.body);
@@ -259,6 +347,7 @@ app.post('/api/bff/asignaciones', async (req, res) => {
     res.status(500).json({ error: 'Error en BFF al crear asignación' });
   }
 });
+
 
 app.delete('/api/bff/asignaciones/:id', async (req, res) => {
   try {
@@ -271,6 +360,7 @@ app.delete('/api/bff/asignaciones/:id', async (req, res) => {
   }
 });
 
+
 // --- Reportes y KPIs ---
 app.get('/api/bff/kpis', async (req, res) => {
   try {
@@ -282,6 +372,7 @@ app.get('/api/bff/kpis', async (req, res) => {
   }
 });
 
+
 app.get('/api/bff/reportes/empleados-por-departamento', async (req, res) => {
   try {
     const data = await empPorDeptoBreaker.fire();
@@ -291,6 +382,7 @@ app.get('/api/bff/reportes/empleados-por-departamento', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener reporte' });
   }
 });
+
 
 app.get('/api/bff/reportes/proyectos-por-estado', async (req, res) => {
   try {
@@ -302,6 +394,7 @@ app.get('/api/bff/reportes/proyectos-por-estado', async (req, res) => {
   }
 });
 
+
 app.get('/api/bff/reportes/proyectos-por-categoria', async (req, res) => {
   try {
     const data = await projPorCatBreaker.fire();
@@ -312,29 +405,35 @@ app.get('/api/bff/reportes/proyectos-por-categoria', async (req, res) => {
   }
 });
 
+
 // ==================== API COMPOSITION ====================
 app.get('/api/bff/tareas-con-empleado', async (req, res) => {
   try {
     const tareas = await tareasGetBreaker.fire();
     if (!tareas || tareas.error || !Array.isArray(tareas)) return res.json([]);
 
+
     const empleadoIds = [...new Set(
       tareas.map(t => t.empleadoId).filter(id => id != null)
     )];
 
+
     const empleadosData = await Promise.all(
       empleadoIds.map(id => empleadoPorIdBreaker.fire(id))
     );
+
 
     const empleadosMap = {};
     empleadosData.filter(e => e !== null).forEach(e => {
       empleadosMap[e.id] = e;
     });
 
+
     const tareasDetalladas = tareas.map(t => ({
       ...t,
       empleado: empleadosMap[t.empleadoId] || null
     }));
+
 
     res.json(tareasDetalladas);
   } catch (error) {
@@ -343,10 +442,12 @@ app.get('/api/bff/tareas-con-empleado', async (req, res) => {
   }
 });
 
+
 app.get('/api/bff/tareas-con-empleado/:id', async (req, res) => {
   try {
     const tarea = await tareaPorIdBreaker.fire(req.params.id);
     if (!tarea) return res.status(404).json({ error: 'Tarea no encontrada' });
+
 
     let empleado = null;
     if (tarea.empleadoId) {
@@ -359,6 +460,7 @@ app.get('/api/bff/tareas-con-empleado/:id', async (req, res) => {
   }
 });
 
+
 app.get('/api/bff/proyectos-detalle', async (req, res) => {
   try {
     const proyectos = await proyectosGetBreaker.fire();
@@ -368,6 +470,7 @@ app.get('/api/bff/proyectos-detalle', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener detalle de proyectos' });
   }
 });
+
 
 // ==================== INICIO DEL SERVIDOR ====================
 app.listen(PORT, () => {

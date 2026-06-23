@@ -156,13 +156,18 @@
                   :min="nuevaTarea.fechaInicio || undefined"
                 />
               </label>
-              <button type="submit" class="btn-submit-task">Agregar</button>
+              <button type="submit" class="btn-submit-task" :disabled="cargandoTareas">
+                {{ cargandoTareas ? '...' : 'Agregar' }}
+              </button>
             </form>
             <p v-if="asignacionesActuales.length === 0" class="form-hint">
               Asigna al menos un trabajador en la pestaña "Equipo" antes de crear tareas.
             </p>
 
-            <div v-if="!proyectoSeleccionado.tareas || proyectoSeleccionado.tareas.length === 0" class="empty-state">
+            <div v-if="cargandoTareas" class="empty-state">
+              Cargando tareas del servidor...
+            </div>
+            <div v-else-if="!proyectoSeleccionado.tareas || proyectoSeleccionado.tareas.length === 0" class="empty-state">
               Sin tareas aún. Agrega la primera.
             </div>
             <div class="tasks-table-wrapper" v-else>
@@ -180,14 +185,25 @@
                 <tbody>
                   <tr v-for="tarea in proyectoSeleccionado.tareas" :key="tarea.id">
                     <td>
-                      <input type="checkbox" v-model="tarea.completada" @change="registrarLog(proyectoSeleccionado, `Cambió estado de tarea: ${tarea.nombre}`)" />
+                      <select
+                        v-model="tarea.estado"
+                        class="status-select-badge"
+                        :class="obtenerClaseEstado(tarea.estado)"
+                        @change="actualizarEstadoTarea(tarea)"
+                      >
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Listo">Listo</option>
+                        <option value="Atrasado">Atrasado</option>
+                      </select>
                     </td>
                     <td>
-                      <span :class="{ 'line-through': tarea.completada }"><strong>{{ tarea.nombre }}</strong></span>
+                      <span :class="{ 'line-through': tarea.estado === 'Listo' }"><strong>{{ tarea.nombre }}</strong></span>
                     </td>
                     <td>{{ nombreTrabajadorTarea(tarea) }}</td>
                     <td>{{ formatearFecha(tarea.fechaInicio) }}</td>
-                    <td :class="{ 'date-alert': esAtrasado(tarea.fechaLimite) && !tarea.completada }">{{ formatearFecha(tarea.fechaLimite) }}</td>
+                    <td :class="{ 'date-alert': (tarea.estado === 'Atrasado' || (esAtrasado(tarea.fechaLimite) && tarea.estado !== 'Listo')) }">
+                      {{ formatearFecha(tarea.fechaLimite) }}
+                    </td>
                     <td>
                       <button type="button" @click="eliminarTarea(tarea.id)" class="btn-delete-task">✕</button>
                     </td>
@@ -230,6 +246,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import api from '../services/api';
+import axios from 'axios';
 
 const props = defineProps({
   proyectos: {
@@ -252,11 +269,11 @@ const proyectosLocales = ref([]);
 
 const asignacionesActuales = ref([]);
 const cargandoAsignaciones = ref(false);
+const cargandoTareas = ref(false);
 
 const nuevaTarea = ref({ nombre: '', asignacionId: '', fechaInicio: '', fechaLimite: '' });
 const nuevoMiembro = ref({ empleadoId: '' });
 
-// 1. Cargar asignaciones desde el backend (Declarada primero)
 const cargarAsignaciones = async (proyectoId) => {
   if (!proyectoId) return;
   cargandoAsignaciones.value = true;
@@ -283,7 +300,24 @@ const cargarAsignaciones = async (proyectoId) => {
   }
 };
 
-// 2. Watch de sincronización (Ahora se ejecuta de forma segura abajo de cargarAsignaciones)
+const cargarTareasDelProyecto = async (proyectoId) => {
+  if (!proyectoId) return;
+  cargandoTareas.value = true;
+  try {
+    const respuesta = await axios.get(`http://localhost:3000/api/bff/tareas/proyecto/${proyectoId}`);
+    if (proyectoSeleccionado.value && proyectoSeleccionado.value.id === proyectoId) {
+      proyectoSeleccionado.value.tareas = respuesta.data || [];
+    }
+  } catch (error) {
+    console.error('Error al cargar tareas del proyecto:', error);
+    if (proyectoSeleccionado.value) {
+      proyectoSeleccionado.value.tareas = [];
+    }
+  } finally {
+    cargandoTareas.value = false;
+  }
+};
+
 watch(() => props.proyectos, (nuevosProyectos) => {
   const idPrevio = proyectoSeleccionado.value?.id;
 
@@ -298,23 +332,25 @@ watch(() => props.proyectos, (nuevosProyectos) => {
     if (!proyectoSeleccionado.value) {
       proyectoSeleccionado.value = proyectosLocales.value[0];
       cargarAsignaciones(proyectoSeleccionado.value.id);
+      cargarTareasDelProyecto(proyectoSeleccionado.value.id);
     } else {
       const mapeado = proyectosLocales.value.find(p => p.id === idPrevio);
       if (mapeado) {
+        const tareasActuales = proyectoSeleccionado.value.tareas;
         proyectoSeleccionado.value = mapeado;
+        proyectoSeleccionado.value.tareas = tareasActuales;
       }
     }
   }
 }, { immediate: true, deep: true });
 
-// KPIs Reactivos Computados
 const totalAtrasados = computed(() => {
   return proyectosLocales.value.filter(p => esAtrasado(p.fechaFin)).length;
 });
 
 const totalTareasCompletadas = computed(() => {
   return proyectosLocales.value.reduce((acc, p) => {
-    return acc + (p.tareas ? p.tareas.filter(t => t.completada).length : 0);
+    return acc + (p.tareas ? p.tareas.filter(t => t.estado === 'Listo').length : 0);
   }, 0);
 });
 
@@ -322,11 +358,11 @@ const totalCostos = computed(() => {
   return proyectosLocales.value.reduce((acc, p) => acc + (p.costo || 0), 0);
 });
 
-// Métodos de control y formato de fechas
 const seleccionarProyecto = (proyecto) => {
   if (proyectoSeleccionado.value?.id === proyecto.id) return;
   proyectoSeleccionado.value = proyecto;
   cargarAsignaciones(proyecto.id);
+  cargarTareasDelProyecto(proyecto.id);
 };
 
 const esAtrasado = (fechaFinStr) => {
@@ -351,7 +387,36 @@ const registrarLog = (proyecto, mensaje) => {
   proyecto.logs.unshift({ hora: horaStr, mensaje });
 };
 
-// Acciones del equipo (API Backend)
+const obtenerClaseEstado = (estado) => {
+  if (estado === 'Listo') return 'badge-success';
+  if (estado === 'Atrasado') return 'badge-danger';
+  return 'badge-warning';
+};
+
+const actualizarEstadoTarea = async (tarea) => {
+  try {
+    const payload = {
+      id: tarea.id,
+      nombre: tarea.nombre,
+      descripcion: tarea.descripcion || '',
+      estado: tarea.estado,
+      asignacionId: tarea.asignacionId,
+      fechaInicio: tarea.fechaInicio,
+      fechaLimite: tarea.fechaLimite
+    };
+
+    await axios.put(`http://localhost:3000/api/bff/tareas/${tarea.id}`, payload);
+
+    registrarLog(
+      proyectoSeleccionado.value,
+      `Cambió estado de tarea "${tarea.nombre}" a: ${tarea.estado}`
+    );
+  } catch (error) {
+    console.error('Error al actualizar el estado de la tarea:', error);
+    alert('No se pudo persistir el cambio de estado en la base de datos.');
+  }
+};
+
 const asignarTrabajador = async () => {
   if (!nuevoMiembro.value.empleadoId || !proyectoSeleccionado.value) return;
 
@@ -402,44 +467,57 @@ const removerTrabajador = async (asignacionId) => {
   }
 };
 
-// Gestión de tareas locales
-const agregarTarea = () => {
+const agregarTarea = async () => {
   if (nuevaTarea.value.fechaInicio && nuevaTarea.value.fechaLimite &&
       nuevaTarea.value.fechaLimite < nuevaTarea.value.fechaInicio) {
     alert('La fecha de fin no puede ser anterior a la fecha de inicio.');
     return;
   }
 
-  if (!proyectoSeleccionado.value.tareas) proyectoSeleccionado.value.tareas = [];
-
   const trabajador = asignacionesActuales.value.find(a => a.id === nuevaTarea.value.asignacionId);
 
-  proyectoSeleccionado.value.tareas.push({
-    id: Date.now(),
+  const tareaPayload = {
     nombre: nuevaTarea.value.nombre,
-    asignacionId: nuevaTarea.value.asignacionId,
-    trabajadorNombre: trabajador?.empleado?.nombre || trabajador?.nombre || 'Colaborador',
+    descripcion: '',
+    proyecto: { id: Number(proyectoSeleccionado.value.id) },
+    asignacionId: nuevaTarea.value.asignacionId ? Number(nuevaTarea.value.asignacionId) : null,
     fechaInicio: nuevaTarea.value.fechaInicio,
     fechaLimite: nuevaTarea.value.fechaLimite,
-    completada: false
-  });
+    estado: 'Pendiente'
+  };
 
-  registrarLog(
-    proyectoSeleccionado.value,
-    `Agregó tarea "${nuevaTarea.value.nombre}" (asignada a ${trabajador?.empleado?.nombre || trabajador?.nombre || 'colaborador'})`
-  );
-  nuevaTarea.value = { nombre: '', asignacionId: '', fechaInicio: '', fechaLimite: '' };
+  try {
+    await axios.post('http://localhost:3000/api/bff/tareas', tareaPayload);
+    
+    await cargarTareasDelProyecto(proyectoSeleccionado.value.id);
+
+    registrarLog(
+      proyectoSeleccionado.value,
+      `Agregó tarea "${nuevaTarea.value.nombre}" (asignada a ${trabajador?.empleado?.nombre || trabajador?.nombre || 'colaborador'})`
+    );
+
+    nuevaTarea.value = { nombre: '', asignacionId: '', fechaInicio: '', fechaLimite: '' };
+  } catch (error) {
+    console.error('Error al guardar la tarea en el servidor:', error);
+    alert('No se pudo guardar la tarea en el servidor.');
+  }
 };
 
 const nombreTrabajadorTarea = (tarea) => {
   const enEquipo = asignacionesActuales.value.find(a => a.id === tarea.asignacionId);
   if (enEquipo) return enEquipo.empleado?.nombre || enEquipo.nombre || 'Colaborador';
-  return tarea.trabajadorNombre || 'Sin asignar';
+  return 'Sin asignar';
 };
 
-const eliminarTarea = (idTarea) => {
-  proyectoSeleccionado.value.tareas = proyectoSeleccionado.value.tareas.filter(t => t.id !== idTarea);
+const eliminarTarea = async (idTarea) => {
+  if (!confirm('¿Estás seguro de eliminar esta tarea permanentemente?')) return;
+  try {
+    await axios.delete(`http://localhost:3000/api/bff/tareas/${idTarea}`);
+    proyectoSeleccionado.value.tareas = proyectoSeleccionado.value.tareas.filter(t => t.id !== idTarea);
+  } catch (error) {
+    console.error('Error al eliminar tarea:', error);
+    alert('No se pudo borrar la tarea.');
+  }
 };
 </script>
 
-<style src="../assets/planning.css" scoped></style>

@@ -180,7 +180,6 @@
 </template>
 
 <script>
-import './assets/dashboard.css';
 import { useAuth0 } from 'libreria_vue_auth';
 import { toRaw } from 'vue'; // Importado para limpiar la consola
 import api from './services/api';
@@ -254,5 +253,6 @@ export default {
 </script>
 
 <style>
+@import './assets/planning.css';
 @import './assets/dashboard.css';
 </style>
