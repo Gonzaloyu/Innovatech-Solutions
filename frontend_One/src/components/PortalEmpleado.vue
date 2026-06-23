@@ -1,7 +1,6 @@
 <template>
   <div class="portal-container">
 
-    <!-- Login Empleado -->
     <div v-if="!empleadoActivo" class="portal-login">
       <div class="welcome-card">
         <h2>Portal del Empleado</h2>
@@ -21,18 +20,18 @@
       </div>
     </div>
 
-    <!-- Dashboard del Empleado -->
     <div v-else>
       <div class="portal-header">
         <div>
           <h2>Hola, {{ empleadoActivo.nombre }}</h2>
           <p>{{ empleadoActivo.cargo?.nombre }} — {{ empleadoActivo.departamento?.nombre }}</p>
+          <small>Tu valor por hora: ${{ empleadoActivo.valorHora || 0 }}</small>
         </div>
         <button class="btn-volver" @click="cerrarSesion">← Salir</button>
       </div>
 
       <div class="portal-content">
-        <h3>Mis Proyectos Asignados ({{ misProyectos.length }})</h3>
+        <h3>Mis Proyectos y Tareas Asignadas ({{ misProyectos.length }})</h3>
 
         <div v-if="misProyectos.length === 0" class="empty-msg">
           No tienes proyectos asignados.
@@ -40,38 +39,81 @@
 
         <div v-else class="proyectos-grid">
           <div v-for="p in misProyectos" :key="p.id" class="proyecto-card">
+            
             <div class="proyecto-card-header">
               <strong>{{ p.nombre }}</strong>
               <span :class="'status ' + (p.estado?.nombre?.toLowerCase().replace(/ /g, '-') || '')">
                 {{ p.estado?.nombre }}
               </span>
             </div>
+
             <p class="proyecto-desc">{{ p.descripcion }}</p>
+
             <div class="proyecto-fechas">
-              <span>Inicio: {{ p.fechaInicio }}</span>
-              <span>Fin: {{ p.fechaFin }}</span>
+              <span><strong>Inicio:</strong> {{ p.fechaInicio }}</span>
+              <span><strong>Fin Estimado:</strong> {{ p.fechaFin }}</span>
             </div>
 
-            <!-- Cambiar estado -->
-            <div v-if="p.estado?.nombre !== 'Finalizado'" class="proyecto-acciones">
-              <select v-model="cambios[p.id]">
-                <option disabled value="">Cambiar estado...</option>
-                <option value="2">En Ejecución</option>
-                <option value="3">Finalizado</option>
-              </select>
-              <button 
-                v-if="cambios[p.id]" 
-                class="btn-actualizar"
-                @click="actualizarEstado(p)"
-              >
-                Actualizar
-              </button>
+            <div class="tareas-seccion" v-if="p.tareas && p.tareas.length > 0">
+              <h4>Tareas vinculadas:</h4>
+              <ul class="lista-tareas">
+                <li v-for="tarea in p.tareas" :key="tarea.id" class="tarea-item">
+                  <span>📌 {{ tarea.nombre }} — <small class="task-status">{{ tarea.estado }}</small></span>
+                  <button 
+                    v-if="!['Listo', 'Finalizada', 'Finalizado'].includes(tarea.estado)" 
+                    @click="finalizarTarea(p.id, tarea)" 
+                    class="btn-small btn-success"
+                  >
+                    ✓ Finalizar Tarea
+                  </button>
+                </li>
+              </ul>
             </div>
 
-            <!-- Completado -->
+            <div v-if="p.estado?.nombre !== 'Finalizado'" class="reporte-empleado-bloque">
+              <hr />
+              <h4>Reporte de Progreso y Herramientas (Proyecto)</h4>
+              
+              <div class="form-group">
+                <label>Comentario de Entrega:</label>
+                <textarea 
+                  v-model="reportes[p.id].comentario" 
+                  placeholder="Escribe los detalles de lo que hiciste en este proyecto..."
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <label>Herramientas / Recursos Utilizados:</label>
+                <div class="herramientas-inputs">
+                  <input v-model="reportes[p.id].nuevaHerramientaNombre" placeholder="Ej. Máquina Virtual" />
+                  <input type="number" v-model.number="reportes[p.id].nuevaHerramientaCosto" placeholder="Costo $" />
+                  <button type="button" @click="agregarHerramienta(p.id)" class="btn-add-tool">+</button>
+                </div>
+                <ul class="lista-herramientas-agregadas">
+                  <li v-for="(h, idx) in reportes[p.id].herramientas" :key="idx">
+                    🛠️ {{ h.nombre }} (Costó: ${{ h.costo }})
+                    <button type="button" @click="eliminarHerramienta(p.id, idx)" class="btn-del-tool">x</button>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="proyecto-acciones">
+                <button class="btn-actualizar btn-guardar" @click="actualizarEstado(p, 2)">
+                  Guardar Progreso
+                </button>
+                <button class="btn-actualizar btn-finalizar" @click="actualizarEstado(p, 3)">
+                  Finalizar Proyecto
+                </button>
+              </div>
+            </div>
+
             <div v-else class="proyecto-completado">
-              Completado el {{ p.fechaFin }} por {{ empleadoActivo.nombre }}
+              <p>✅ <strong>Proyecto Completado</strong> el {{ p.fechaFin }} por {{ empleadoActivo.nombre }}</p>
+              <p class="costo-total-resumen">
+                Costo Total Calculado: ${{ p.costoTotalCalculado || 0 }}
+              </p>
             </div>
+
           </div>
         </div>
       </div>
@@ -89,7 +131,7 @@ export default {
       nombreBusqueda: '',
       empleadoActivo: null,
       misProyectos: [],
-      cambios: {},
+      reportes: {}, 
       errorBusqueda: null
     };
   },
@@ -116,23 +158,82 @@ export default {
       try {
         const res = await api.getProyectosPorEmpleado(this.empleadoActivo.id);
         this.misProyectos = res.data.error ? [] : res.data;
+        
+        this.misProyectos.forEach(p => {
+          this.reportes[p.id] = {
+            comentario: '',
+            herramientas: [],
+            nuevaHerramientaNombre: '',
+            nuevaHerramientaCosto: 0
+          };
+        });
       } catch (e) {
         console.error('Error cargando proyectos:', e);
       }
     },
-    async actualizarEstado(proyecto) {
+    agregarHerramienta(proyectoId) {
+      const r = this.reportes[proyectoId];
+      if (r.nuevaHerramientaNombre.trim() === '') return;
+
+      r.herramientas.push({
+        nombre: r.nuevaHerramientaNombre,
+        costo: r.nuevaHerramientaCosto || 0
+      });
+
+      r.nuevaHerramientaNombre = '';
+      r.nuevaHerramientaCosto = 0;
+    },
+    eliminarHerramienta(proyectoId, index) {
+      this.reportes[proyectoId].herramientas.splice(index, 1);
+    },
+    async finalizarTarea(proyectoId, tarea) {
+      if(confirm(`¿Seguro que deseas marcar como LISTA la tarea: ${tarea.nombre}?`)) {
+        try {
+          // Actualizamos la tarea en el Backend a "Listo"
+          const tareaActualizada = { ...tarea, estado: 'Listo' };
+          await api.actualizarTarea(tarea.id, tareaActualizada);
+          
+          // Actualizamos visualmente en el portal
+          tarea.estado = 'Listo'; 
+          alert('Tarea finalizada y sincronizada con el administrador.');
+        } catch (e) {
+          console.error(e);
+          alert('Error al sincronizar la tarea con el servidor. Verifica que tengas api.actualizarTarea creado.');
+        }
+      }
+    },
+    async actualizarEstado(proyecto, estadoId) {
       try {
-        const estadoId = parseInt(this.cambios[proyecto.id]);
+        const reporteProyecto = this.reportes[proyecto.id];
+        const costoHerramientasTotales = reporteProyecto.herramientas.reduce((acc, curr) => acc + curr.costo, 0);
+
         const body = {
-          estadoId,
-          empleadoCompletaId: this.empleadoActivo.id
+          estadoId: estadoId,
+          empleadoCompletaId: this.empleadoActivo.id,
+          comentario: reporteProyecto.comentario,
+          herramientas: reporteProyecto.herramientas,
+          costoHerramientas: costoHerramientasTotales
         };
+
         if (estadoId === 3) {
           body.fechaFin = new Date().toISOString().split('T')[0];
+          
+          const fechaInicio = new Date(proyecto.fechaInicio);
+          const fechaFin = new Date(body.fechaFin);
+          const diasDiferencia = Math.max(1, Math.round((fechaFin - fechaInicio) / (1000 * 60 * 60 * 24)));
+          
+          const horasDedicadasEstimadas = diasDiferencia * 8; 
+          body.horasDedicadas = horasDedicadasEstimadas;
         }
+
         await api.actualizarEstadoProyecto(proyecto.id, body);
-        alert('Estado actualizado con éxito');
-        this.cambios[proyecto.id] = '';
+        
+        if (estadoId === 3) {
+          alert('Proyecto finalizado y analíticas registradas con éxito');
+        } else {
+          alert('Progreso guardado en ejecución con éxito');
+        }
+        
         await this.cargarProyectos();
       } catch (e) {
         alert('Error al actualizar estado');
@@ -142,8 +243,8 @@ export default {
       this.empleadoActivo = null;
       this.misProyectos = [];
       this.nombreBusqueda = '';
+      this.reportes = {};
     }
   }
 };
 </script>
-

@@ -132,6 +132,7 @@
                     <th>Cargo</th>
                     <th>Nivel</th>
                     <th>Departamento</th>
+                    <th>Valor/Hr</th> 
                   </tr>
                 </thead>
                 <tbody>

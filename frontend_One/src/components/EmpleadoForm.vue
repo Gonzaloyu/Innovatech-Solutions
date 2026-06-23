@@ -5,6 +5,14 @@
       <input v-model="nuevoEmpleado.nombre" placeholder="Nombre Completo" required />
       <input v-model="nuevoEmpleado.email" type="email" placeholder="Email" required />
 
+      <input 
+        type="number" 
+        step="0.01" 
+        v-model.number="nuevoEmpleado.valorHora" 
+        placeholder="Valor por Hora ($)" 
+        required 
+      />
+
       <select v-model="nuevoEmpleado.departamento.id" required>
         <option disabled value="">Seleccionar Departamento</option>
         <option value="1">TI</option>
@@ -33,6 +41,7 @@ export default {
       nuevoEmpleado: {
         nombre: '',
         email: '',
+        valorHora: '', 
         departamento: { id: '' },
         cargo: { id: '' }
       }
@@ -44,8 +53,9 @@ export default {
         await api.createEmpleado(this.nuevoEmpleado);
         alert('Empleado registrado con éxito');
         this.$emit('empleado-creado');
+        // Resetear formulario incluyendo valorHora
         this.nuevoEmpleado = {
-          nombre: '', email: '',
+          nombre: '', email: '', valorHora: '',
           departamento: { id: '' },
           cargo: { id: '' }
         };

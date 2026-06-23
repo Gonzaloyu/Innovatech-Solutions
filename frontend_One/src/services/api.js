@@ -14,12 +14,13 @@ export default {
   getTareas()            { return apiClient.get('/tareas'); },
   createTarea(data)      { return apiClient.post('/tareas', data); },
   getTareasConEmpleado() { return apiClient.get('/tareas-con-empleado'); },
+  actualizarTarea(id, data) { return apiClient.put(`/tareas/${id}`, data); },
 
   // EMPLEADOS
   getEmpleados()         { return apiClient.get('/empleados'); },
   createEmpleado(data)   { return apiClient.post('/empleados', data); },
 
-  // ASIGNACIONES (¡MÉTODOS FALTANTES AGREGADOS!)
+  // ASIGNACIONES
   createAsignacion(data) { return apiClient.post('/asignaciones', data); },
   
   getAsignacionesPorProyecto(proyectoId) { 
@@ -30,12 +31,13 @@ export default {
     return apiClient.delete(`/asignaciones/${id}`); 
   },
 
-  // KPIs y REPORTES (backend-reportes)
+  // KPIs y REPORTES
   getKpis()                     { return apiClient.get('/kpis'); },
   getEmpleadosPorDepartamento() { return apiClient.get('/reportes/empleados-por-departamento'); },
   getProyectosPorEstado()       { return apiClient.get('/reportes/proyectos-por-estado'); },
   getProyectosPorCategoria()    { return apiClient.get('/reportes/proyectos-por-categoria'); },
 
+  // ESTADOS Y BUSQUEDAS
   getProyectosPorEmpleado(empleadoId) { 
     return apiClient.get(`/proyectos/empleado/${empleadoId}`); 
   },

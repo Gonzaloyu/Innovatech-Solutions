@@ -5,13 +5,15 @@
     <div v-if="loading" class="spinner"></div>
     
     <div v-else-if="error" class="error">{{ error }}</div>
+    
     <ul v-else>
       <li v-for="empleado in empleados" :key="empleado.id">
         <strong>{{ empleado.nombre }}</strong>
         ({{ empleado.cargo?.nombre }} - {{ empleado.cargo?.nivel }})
         — {{ empleado.departamento?.nombre }}
+        — <strong class="valor-hora">Cobra: ${{ empleado.valorHora || 0 }}/hr</strong>
       </li>
-      <li v-if="empleados.length === 0">No hay empleados registrados.</li>
+      <li v-if="empleados.length === 0" class="empty-list">No hay empleados registrados.</li>
     </ul>
   </div>
 </template>

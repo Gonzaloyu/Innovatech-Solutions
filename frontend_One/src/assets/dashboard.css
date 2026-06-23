@@ -631,3 +631,393 @@ body {
     background: #e2e8f0;
     color: #1e293b;
 }
+
+/* =========================================
+   ESTILOS PARA LISTA DE EMPLEADOS (EmpleadoList)
+   ========================================= */
+.card {
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+}
+
+.card h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #1e293b;
+  font-size: 1.5rem;
+}
+
+.card ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.card li {
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+
+.card li:last-child {
+  border-bottom: none;
+}
+
+.valor-hora {
+  color: #10b981;
+}
+
+.empty-list {
+  color: #64748b;
+  font-style: italic;
+}
+
+.error {
+  color: #ef4444;
+  background-color: #fef2f2;
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: #3b82f6;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* =========================================
+   ESTILOS PARA FORMULARIO (EmpleadoForm)
+   ========================================= */
+.form-container {
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+}
+
+.form-container h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #1e293b;
+  font-size: 1.5rem;
+}
+
+.form-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-container input, 
+.form-container select {
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 1rem;
+  color: #334155;
+  background-color: #f8fafc;
+  transition: border-color 0.3s ease;
+}
+
+.form-container input:focus, 
+.form-container select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background-color: #ffffff;
+}
+
+.btn-empleado {
+  background-color: #3b82f6;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 8px;
+}
+
+.btn-empleado:hover {
+  background-color: #2563eb;
+}
+/* =========================================
+   ESTILOS PARA EL PORTAL DEL EMPLEADO
+   ========================================= */
+
+/* Contenedor principal del portal */
+.portal-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+/* Pantalla de login del empleado */
+.portal-login {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.welcome-card {
+  background: #ffffff;
+  padding: 40px 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  width: 100%;
+  max-width: 450px;
+}
+
+/* Cabecera del portal cuando ya entró */
+.portal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  padding: 20px 25px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 25px;
+  border-left: 5px solid #3b82f6;
+}
+
+.portal-header h2 {
+  margin: 0;
+  color: #1e293b;
+}
+
+.portal-header p, .portal-header small {
+  margin: 5px 0 0 0;
+  color: #64748b;
+  display: block;
+}
+
+.btn-volver {
+  background-color: #64748b;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-volver:hover {
+  background-color: #475569;
+}
+
+/* Tarjetas de Proyectos */
+.proyectos-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.proyecto-card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 25px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.proyecto-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  font-size: 1.25rem;
+  color: #0f172a;
+}
+
+.proyecto-desc {
+  color: #475569;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.proyecto-fechas {
+  display: flex;
+  justify-content: space-between;
+  background: #f8fafc;
+  padding: 12px 15px;
+  border-radius: 6px;
+  color: #64748b;
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+}
+
+/* Sección de Tareas */
+.tareas-seccion {
+  background: #f1f5f9;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.tareas-seccion h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #334155;
+}
+
+.tareas-seccion ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tareas-seccion li {
+  background: #ffffff;
+  padding: 10px 15px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+}
+
+.task-status {
+  background: #e2e8f0;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #475569;
+}
+
+/* Bloque de Reporte y Herramientas */
+.reporte-empleado-bloque {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+  margin-top: 20px;
+}
+
+.reporte-empleado-bloque hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin-bottom: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.herramientas-inputs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.herramientas-inputs input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.btn-add-tool {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 0 20px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-add-tool:hover {
+  background: #059669;
+}
+
+.lista-herramientas-agregadas {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.lista-herramientas-agregadas li {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  padding: 10px 15px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+}
+
+.btn-del-tool {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  margin-left: auto;
+  cursor: pointer;
+  padding: 4px 10px;
+  font-weight: bold;
+}
+
+.btn-del-tool:hover {
+  background: #dc2626;
+}
+
+/* Botones de acción finales */
+.proyecto-acciones .btn-actualizar {
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  flex: 1;
+  text-align: center;
+  transition: opacity 0.3s;
+}
+
+.proyecto-acciones .btn-actualizar:hover {
+  opacity: 0.9;
+}

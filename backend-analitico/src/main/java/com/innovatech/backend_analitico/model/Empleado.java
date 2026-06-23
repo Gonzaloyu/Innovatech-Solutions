@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "empleados")
@@ -29,4 +30,8 @@ public class Empleado {
     @ManyToOne
     @JoinColumn(name = "cargo_id", nullable = false)
     private Cargo cargo;
+
+    //Valor que cobra el empleado por hora trabajada
+    @Column(name = "valor_hora", nullable = false, precision = 10, scale = 2)
+    private BigDecimal valorHora;
 }

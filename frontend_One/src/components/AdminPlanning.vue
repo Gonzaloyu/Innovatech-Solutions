@@ -20,6 +20,7 @@
     </div>
 
     <div class="main-layout">
+      
       <div class="projects-sidebar">
         <div class="sidebar-header">
           <h3>Proyectos</h3>
@@ -39,8 +40,8 @@
           >
             <div class="card-top">
               <h4>{{ proj.nombre }}</h4>
-              <span class="status-pill" :class="(proj.estado || 'en-planificación').toLowerCase().replace(/ /g, '-')">
-                {{ proj.estado || 'En Planificación' }}
+              <span class="status-pill" :class="(proj.estado?.nombre || proj.estado || 'en-planificación').toLowerCase().replace(/ /g, '-')">
+                {{ proj.estado?.nombre || proj.estado || 'En Planificación' }}
               </span>
             </div>
             <p class="responsable-text">{{ proj.responsable || 'Sin asignar' }}</p>
@@ -52,10 +53,11 @@
       </div>
 
       <div class="planning-detail" v-if="proyectoSeleccionado">
+        
         <div class="detail-header">
           <h2>{{ proyectoSeleccionado.nombre }}</h2>
-          <span class="status-pill big" :class="(proyectoSeleccionado.estado || 'en-planificación').toLowerCase().replace(/ /g, '-')">
-            {{ proyectoSeleccionado.estado || 'En Planificación' }}
+          <span class="status-pill big" :class="(proyectoSeleccionado.estado?.nombre || proyectoSeleccionado.estado || 'en-planificación').toLowerCase().replace(/ /g, '-')">
+            {{ proyectoSeleccionado.estado?.nombre || proyectoSeleccionado.estado || 'En Planificación' }}
           </span>
         </div>
 
@@ -76,6 +78,7 @@
         </div>
 
         <div class="tab-content">
+          
           <div v-if="pestañaActiva === 'Equipo'">
             <form @submit.prevent="asignarTrabajador" class="task-inline-form">
               <select v-model="nuevoMiembro.empleadoId" class="select-ms" required>
@@ -120,7 +123,7 @@
             </div>
           </div>
 
-          <div v-else-if="pestañaActiva === 'Tareas'" class="placeholder-tab-content">
+          <div v-else-if="pestañaActiva === 'Tareas'">
             <form @submit.prevent="agregarTarea" class="task-form-grid">
               <input
                 type="text"
@@ -129,11 +132,11 @@
                 required
                 class="input-task-name"
               />
-              <select v-model="nuevaTarea.asignacionId" class="select-ms" required :disabled="asignacionesActuales.length === 0">
+              <select v-model="nuevaTarea.empleadoId" class="select-ms" required :disabled="asignacionesActuales.length === 0">
                 <option value="" disabled selected>
                   {{ asignacionesActuales.length === 0 ? 'Sin equipo asignado aún' : 'Trabajador asignado...' }}
                 </option>
-                <option v-for="member in asignacionesActuales" :key="member.id" :value="member.id">
+                <option v-for="member in asignacionesActuales" :key="member.id" :value="member.empleado?.id || member.empleadoId">
                   {{ member.empleado?.nombre || member.nombre || 'Colaborador' }}
                 </option>
               </select>
@@ -160,6 +163,7 @@
                 {{ cargandoTareas ? '...' : 'Agregar' }}
               </button>
             </form>
+            
             <p v-if="asignacionesActuales.length === 0" class="form-hint">
               Asigna al menos un trabajador en la pestaña "Equipo" antes de crear tareas.
             </p>
@@ -170,6 +174,7 @@
             <div v-else-if="!proyectoSeleccionado.tareas || proyectoSeleccionado.tareas.length === 0" class="empty-state">
               Sin tareas aún. Agrega la primera.
             </div>
+            
             <div class="tasks-table-wrapper" v-else>
               <table class="planning-table">
                 <thead>
@@ -213,18 +218,18 @@
             </div>
           </div>
 
-          <div v-else-if="pestañaActiva === 'Costos'" class="placeholder-tab-content">
+          <div v-else-if="pestañaActiva === 'Costos'">
             <h4>Presupuesto de Infraestructura y Desarrollo</h4>
             <div class="cost-row" style="display: flex; gap: 10px; align-items: center;">
               <label>Presupuesto Estimado (USD):</label>
               <input type="number" v-model.number="proyectoSeleccionado.costo" style="width: 150px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;" />
             </div>
             <p style="font-size: 0.9rem; color: #64748b; margin-top: 10px;">
-              Costo calculado para contenedores en microservicios y bases de datos Dockerizadas.
+              Costo acumulado dinámico basado en horas operativas de desarrollo y recursos extras.
             </p>
           </div>
 
-          <div v-else-if="pestañaActiva === 'Historial'" class="placeholder-tab-content">
+          <div v-else-if="pestañaActiva === 'Historial'">
             <h4>Bitácora de Cambios Recientes</h4>
             <div class="logs-container">
               <p v-if="!proyectoSeleccionado.logs || proyectoSeleccionado.logs.length === 0" class="empty-msg" style="color: #94a3b8; font-style: italic; padding: 10px 0;">No hay registros de actividad.</p>
@@ -233,12 +238,14 @@
               </div>
             </div>
           </div>
+
         </div>
       </div>
 
       <div class="planning-detail empty-state" v-else>
         Selecciona un proyecto de la lista izquierda para ver e iniciar su planificación.
       </div>
+
     </div>
   </div>
 </template>
@@ -249,16 +256,8 @@ import api from '../services/api';
 import axios from 'axios';
 
 const props = defineProps({
-  proyectos: {
-    type: Array,
-    required: true,
-    default: () => []
-  },
-  empleados: {
-    type: Array,
-    required: true,
-    default: () => []
-  }
+  proyectos: { type: Array, required: true, default: () => [] },
+  empleados: { type: Array, required: true, default: () => [] }
 });
 
 const emit = defineEmits(['empleado-asignado']);
@@ -266,34 +265,36 @@ const emit = defineEmits(['empleado-asignado']);
 const pestañaActiva = ref('Equipo');
 const proyectoSeleccionado = ref(null);
 const proyectosLocales = ref([]);
-
 const asignacionesActuales = ref([]);
 const cargandoAsignaciones = ref(false);
 const cargandoTareas = ref(false);
 
-const nuevaTarea = ref({ nombre: '', asignacionId: '', fechaInicio: '', fechaLimite: '' });
+const nuevaTarea = ref({ nombre: '', empleadoId: '', fechaInicio: '', fechaLimite: '' });
 const nuevoMiembro = ref({ empleadoId: '' });
 
+// ==========================================
+// LLAMADAS A LA API
+// ==========================================
 const cargarAsignaciones = async (proyectoId) => {
   if (!proyectoId) return;
   cargandoAsignaciones.value = true;
   try {
     const respuesta = await api.getAsignacionesPorProyecto(proyectoId);
     const lista = respuesta?.data || [];
+    const listaEmpleados = props.empleados || [];
 
     asignacionesActuales.value = lista.map(a => {
       if (!a) return null;
-      const emp = props.empleados.find(e => e.id === a.empleadoId);
+      const emp = listaEmpleados.find(e => e.id === a.empleadoId);
       return {
         id: a.id,
+        empleadoId: a.empleadoId,
         rol: a.rol || 'Desarrollador',
-        empleado: emp
-          ? { id: emp.id, nombre: emp.nombre, email: emp.email }
-          : { id: a.empleadoId, nombre: 'Empleado', email: 'N/A' }
+        empleado: emp ? { id: emp.id, nombre: emp.nombre, email: emp.email } : null
       };
-    }).filter(item => item !== null);
+    }).filter(item => item !== null && item.empleado !== null);
   } catch (error) {
-    console.error('Error al cargar asignaciones del proyecto:', error);
+    console.error('Error al cargar asignaciones:', error);
     asignacionesActuales.value = [];
   } finally {
     cargandoAsignaciones.value = false;
@@ -309,16 +310,17 @@ const cargarTareasDelProyecto = async (proyectoId) => {
       proyectoSeleccionado.value.tareas = respuesta.data || [];
     }
   } catch (error) {
-    console.error('Error al cargar tareas del proyecto:', error);
-    if (proyectoSeleccionado.value) {
-      proyectoSeleccionado.value.tareas = [];
-    }
+    console.error('Error al cargar tareas:', error);
   } finally {
     cargandoTareas.value = false;
   }
 };
 
+// ==========================================
+// WATCHERS
+// ==========================================
 watch(() => props.proyectos, (nuevosProyectos) => {
+  if (!nuevosProyectos || !Array.isArray(nuevosProyectos)) return;
   const idPrevio = proyectoSeleccionado.value?.id;
 
   proyectosLocales.value = nuevosProyectos.map(p => ({
@@ -329,42 +331,31 @@ watch(() => props.proyectos, (nuevosProyectos) => {
   }));
 
   if (proyectosLocales.value.length > 0) {
-    if (!proyectoSeleccionado.value) {
+    const mapeado = idPrevio ? proyectosLocales.value.find(p => p.id === idPrevio) : null;
+    if (!proyectoSeleccionado.value || !mapeado) {
       proyectoSeleccionado.value = proyectosLocales.value[0];
       cargarAsignaciones(proyectoSeleccionado.value.id);
       cargarTareasDelProyecto(proyectoSeleccionado.value.id);
     } else {
-      const mapeado = proyectosLocales.value.find(p => p.id === idPrevio);
-      if (mapeado) {
-        const tareasActuales = proyectoSeleccionado.value.tareas;
-        proyectoSeleccionado.value = mapeado;
-        proyectoSeleccionado.value.tareas = tareasActuales;
-      }
+      const tareasActuales = proyectoSeleccionado.value.tareas || [];
+      proyectoSeleccionado.value = mapeado;
+      proyectoSeleccionado.value.tareas = tareasActuales;
     }
   }
 }, { immediate: true, deep: true });
 
-const totalAtrasados = computed(() => {
-  return proyectosLocales.value.filter(p => esAtrasado(p.fechaFin)).length;
-});
-
+// ==========================================
+// COMPUTED / KPIS
+// ==========================================
+const totalAtrasados = computed(() => proyectosLocales.value.filter(p => esAtrasado(p.fechaFin)).length);
 const totalTareasCompletadas = computed(() => {
-  return proyectosLocales.value.reduce((acc, p) => {
-    return acc + (p.tareas ? p.tareas.filter(t => t.estado === 'Listo').length : 0);
-  }, 0);
+  return proyectosLocales.value.reduce((acc, p) => acc + (p.tareas ? p.tareas.filter(t => t.estado === 'Listo' || t.estado === 'Finalizada').length : 0), 0);
 });
+const totalCostos = computed(() => proyectosLocales.value.reduce((acc, p) => acc + (p.costo || 0), 0));
 
-const totalCostos = computed(() => {
-  return proyectosLocales.value.reduce((acc, p) => acc + (p.costo || 0), 0);
-});
-
-const seleccionarProyecto = (proyecto) => {
-  if (proyectoSeleccionado.value?.id === proyecto.id) return;
-  proyectoSeleccionado.value = proyecto;
-  cargarAsignaciones(proyecto.id);
-  cargarTareasDelProyecto(proyecto.id);
-};
-
+// ==========================================
+// METODOS AUXILIARES
+// ==========================================
 const esAtrasado = (fechaFinStr) => {
   if (!fechaFinStr) return false;
   const hoy = new Date();
@@ -375,9 +366,7 @@ const esAtrasado = (fechaFinStr) => {
 const formatearFecha = (fechaStr) => {
   if (!fechaStr) return '';
   const partes = fechaStr.split('-');
-  if (partes.length !== 3) return fechaStr;
-  const [year, month, day] = partes;
-  return `${day}-${month}-${year}`;
+  return partes.length === 3 ? `${partes[2]}-${partes[1]}-${partes[0]}` : fechaStr;
 };
 
 const registrarLog = (proyecto, mensaje) => {
@@ -388,42 +377,33 @@ const registrarLog = (proyecto, mensaje) => {
 };
 
 const obtenerClaseEstado = (estado) => {
-  if (estado === 'Listo') return 'badge-success';
+  if (estado === 'Listo' || estado === 'Finalizada') return 'badge-success';
   if (estado === 'Atrasado') return 'badge-danger';
   return 'badge-warning';
 };
 
-const actualizarEstadoTarea = async (tarea) => {
-  try {
-    const payload = {
-      id: tarea.id,
-      nombre: tarea.nombre,
-      descripcion: tarea.descripcion || '',
-      estado: tarea.estado,
-      asignacionId: tarea.asignacionId,
-      fechaInicio: tarea.fechaInicio,
-      fechaLimite: tarea.fechaLimite
-    };
-
-    await axios.put(`http://localhost:3000/api/bff/tareas/${tarea.id}`, payload);
-
-    registrarLog(
-      proyectoSeleccionado.value,
-      `Cambió estado de tarea "${tarea.nombre}" a: ${tarea.estado}`
-    );
-  } catch (error) {
-    console.error('Error al actualizar el estado de la tarea:', error);
-    alert('No se pudo persistir el cambio de estado en la base de datos.');
-  }
+const nombreTrabajadorTarea = (tarea) => {
+  const empId = tarea.empleadoId || tarea.asignacionId;
+  const enEquipo = asignacionesActuales.value.find(a => a.empleadoId === empId || a.id === empId);
+  return enEquipo?.empleado?.nombre || 'Colaborador';
 };
 
+const seleccionarProyecto = (proyecto) => {
+  if (proyectoSeleccionado.value?.id === proyecto.id) return;
+  proyectoSeleccionado.value = proyecto;
+  cargarAsignaciones(proyecto.id);
+  cargarTareasDelProyecto(proyecto.id);
+};
+
+// ==========================================
+// ACCIONES
+// ==========================================
 const asignarTrabajador = async () => {
   if (!nuevoMiembro.value.empleadoId || !proyectoSeleccionado.value) return;
 
   const idNumerico = Number(nuevoMiembro.value.empleadoId);
   const emp = props.empleados.find(e => e.id === idNumerico);
-  const nombreEmpleado = emp ? emp.nombre : 'Empleado';
-  const rolPorDefecto = emp && emp.cargo && emp.cargo.nombre ? emp.cargo.nombre : 'Colaborador';
+  const rolPorDefecto = emp?.cargo?.nombre || 'Colaborador';
 
   try {
     const respuesta = await api.createAsignacion({
@@ -432,55 +412,45 @@ const asignarTrabajador = async () => {
       rol: rolPorDefecto
     });
 
-    if (respuesta && respuesta.data && respuesta.data.error) {
-      alert(`Aviso del Sistema: ${respuesta.data.error}`);
+    if (respuesta?.data?.error) {
+      alert(`Aviso: ${respuesta.data.error}`);
       return;
     }
 
     nuevoMiembro.value.empleadoId = '';
     await cargarAsignaciones(proyectoSeleccionado.value.id);
-    
-    if (proyectoSeleccionado.value) {
-      if (!proyectoSeleccionado.value.logs) proyectoSeleccionado.value.logs = [];
-      registrarLog(proyectoSeleccionado.value, `Asignó a ${nombreEmpleado} al equipo.`);
-    }
-    
+    registrarLog(proyectoSeleccionado.value, `Asignó a ${emp?.nombre} al equipo.`);
     emit('empleado-asignado');
   } catch (error) {
-    console.error('Error al guardar la asignación:', error);
-    alert('No se pudo procesar la asignación del trabajador.');
+    alert('No se pudo procesar la asignación.');
   }
 };
 
 const removerTrabajador = async (asignacionId) => {
-  if (!confirm('¿Deseas dar de baja a este colaborador de este proyecto?')) return;
+  if (!confirm('¿Deseas dar de baja a este colaborador?')) return;
   try {
     await api.deleteAsignacion(asignacionId);
     await cargarAsignaciones(proyectoSeleccionado.value.id);
-    if (proyectoSeleccionado.value) {
-      registrarLog(proyectoSeleccionado.value, `Removió una asignación del equipo`);
-    }
+    registrarLog(proyectoSeleccionado.value, `Removió una asignación del equipo`);
     emit('empleado-asignado');
   } catch (error) {
-    console.error('Error al remover:', error);
-    alert('No se pudo remover la asignación en el backend.');
+    alert('No se pudo remover la asignación.');
   }
 };
 
 const agregarTarea = async () => {
-  if (nuevaTarea.value.fechaInicio && nuevaTarea.value.fechaLimite &&
-      nuevaTarea.value.fechaLimite < nuevaTarea.value.fechaInicio) {
-    alert('La fecha de fin no puede ser anterior a la fecha de inicio.');
+  if (nuevaTarea.value.fechaLimite < nuevaTarea.value.fechaInicio) {
+    alert('La fecha de fin no puede ser anterior.');
     return;
   }
 
-  const trabajador = asignacionesActuales.value.find(a => a.id === nuevaTarea.value.asignacionId);
+  const emp = props.empleados.find(e => e.id === Number(nuevaTarea.value.empleadoId));
 
   const tareaPayload = {
     nombre: nuevaTarea.value.nombre,
     descripcion: '',
     proyecto: { id: Number(proyectoSeleccionado.value.id) },
-    asignacionId: nuevaTarea.value.asignacionId ? Number(nuevaTarea.value.asignacionId) : null,
+    empleadoId: Number(nuevaTarea.value.empleadoId), // 🔑 Guardamos el ID del empleado directo
     fechaInicio: nuevaTarea.value.fechaInicio,
     fechaLimite: nuevaTarea.value.fechaLimite,
     estado: 'Pendiente'
@@ -488,36 +458,38 @@ const agregarTarea = async () => {
 
   try {
     await axios.post('http://localhost:3000/api/bff/tareas', tareaPayload);
-    
     await cargarTareasDelProyecto(proyectoSeleccionado.value.id);
-
-    registrarLog(
-      proyectoSeleccionado.value,
-      `Agregó tarea "${nuevaTarea.value.nombre}" (asignada a ${trabajador?.empleado?.nombre || trabajador?.nombre || 'colaborador'})`
-    );
-
-    nuevaTarea.value = { nombre: '', asignacionId: '', fechaInicio: '', fechaLimite: '' };
+    registrarLog(proyectoSeleccionado.value, `Agregó tarea "${nuevaTarea.value.nombre}" a ${emp?.nombre}`);
+    nuevaTarea.value = { nombre: '', empleadoId: '', fechaInicio: '', fechaLimite: '' };
   } catch (error) {
-    console.error('Error al guardar la tarea en el servidor:', error);
-    alert('No se pudo guardar la tarea en el servidor.');
+    alert('Error al guardar la tarea.');
   }
 };
 
-const nombreTrabajadorTarea = (tarea) => {
-  const enEquipo = asignacionesActuales.value.find(a => a.id === tarea.asignacionId);
-  if (enEquipo) return enEquipo.empleado?.nombre || enEquipo.nombre || 'Colaborador';
-  return 'Sin asignar';
+const actualizarEstadoTarea = async (tarea) => {
+  try {
+    const payload = {
+      id: tarea.id,
+      nombre: tarea.nombre,
+      estado: tarea.estado,
+      empleadoId: tarea.empleadoId,
+      fechaInicio: tarea.fechaInicio,
+      fechaLimite: tarea.fechaLimite
+    };
+    await axios.put(`http://localhost:3000/api/bff/tareas/${tarea.id}`, payload);
+    registrarLog(proyectoSeleccionado.value, `Cambió estado de tarea "${tarea.nombre}" a: ${tarea.estado}`);
+  } catch (error) {
+    alert('Error al persistir estado.');
+  }
 };
 
 const eliminarTarea = async (idTarea) => {
-  if (!confirm('¿Estás seguro de eliminar esta tarea permanentemente?')) return;
+  if (!confirm('¿Eliminar esta tarea?')) return;
   try {
     await axios.delete(`http://localhost:3000/api/bff/tareas/${idTarea}`);
     proyectoSeleccionado.value.tareas = proyectoSeleccionado.value.tareas.filter(t => t.id !== idTarea);
   } catch (error) {
-    console.error('Error al eliminar tarea:', error);
     alert('No se pudo borrar la tarea.');
   }
 };
 </script>
-
