@@ -463,3 +463,9 @@ select, option {
   cursor: pointer;
   margin-left: 5px;
 }
+
+.user-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}

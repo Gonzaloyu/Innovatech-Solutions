@@ -1,22 +1,22 @@
 <template>
   <div class="portal-container">
 
-    <div v-if="!empleadoActivo" class="portal-login">
+    <div v-if="cargandoPortal" class="portal-login">
       <div class="welcome-card">
         <h2>Portal del Empleado</h2>
-        <p>Ingresa tu nombre para ver tus proyectos asignados</p>
-        <div class="form-container">
-          <form @submit.prevent="buscarEmpleado">
-            <input 
-              v-model="nombreBusqueda" 
-              placeholder="Tu nombre completo" 
-              required 
-            />
-            <button type="submit" class="btn-empleado">Ingresar</button>
-          </form>
-        </div>
+        <p>Identificando tu usuario y cargando proyectos...</p>
+        <div style="margin: 20px 0; color: #3b82f6;">Sincronizando con Auth0...</div>
         <p v-if="errorBusqueda" class="error">{{ errorBusqueda }}</p>
-        <button class="btn-volver" @click="$emit('volver')">← Volver</button>
+      </div>
+    </div>
+
+    <div v-else-if="!empleadoActivo" class="portal-login">
+      <div class="welcome-card">
+        <h2>Portal del Empleado</h2>
+        <p class="error" style="font-size: 1.1rem; margin-bottom: 20px;">
+          ⚠️ Tu cuenta ({{ user?.email }}) no está registrada como empleado en el sistema.
+        </p>
+        <p>Contacta al administrador para que registre tu correo exactamente igual.</p>
       </div>
     </div>
 
@@ -27,14 +27,13 @@
           <p>{{ empleadoActivo.cargo?.nombre }} — {{ empleadoActivo.departamento?.nombre }}</p>
           <small>Tu valor por hora: ${{ empleadoActivo.valorHora || 0 }}</small>
         </div>
-        <button class="btn-volver" @click="cerrarSesion">← Salir</button>
       </div>
 
       <div class="portal-content">
         <h3>Mis Proyectos y Tareas Asignadas ({{ misProyectos.length }})</h3>
 
         <div v-if="misProyectos.length === 0" class="empty-msg">
-          No tienes proyectos asignados.
+          No tienes proyectos asignados actualmente.
         </div>
 
         <div v-else class="proyectos-grid">
@@ -54,14 +53,14 @@
               <span><strong>Fin Estimado:</strong> {{ p.fechaFin }}</span>
             </div>
 
-            <div class="tareas-seccion" v-if="p.tareas && p.tareas.length > 0">
-              <h4>Tareas vinculadas:</h4>
+            <div class="tareas-seccion" v-if="p.misTareas && p.misTareas.length > 0">
+              <h4>Tus tareas vinculadas:</h4>
               <ul class="lista-tareas">
-                <li v-for="tarea in p.tareas" :key="tarea.id" class="tarea-item">
+                <li v-for="tarea in p.misTareas" :key="tarea.id" class="tarea-item">
                   <span>📌 {{ tarea.nombre }} — <small class="task-status">{{ tarea.estado }}</small></span>
-                  <button 
-                    v-if="!['Listo', 'Finalizada', 'Finalizado'].includes(tarea.estado)" 
-                    @click="finalizarTarea(p.id, tarea)" 
+                  <button
+                    v-if="!['Listo', 'Finalizada', 'Finalizado'].includes(tarea.estado)"
+                    @click="finalizarTarea(p.id, tarea)"
                     class="btn-small btn-success"
                   >
                     ✓ Finalizar Tarea
@@ -69,15 +68,18 @@
                 </li>
               </ul>
             </div>
+            <div v-else-if="p.tareas && p.tareas.length > 0" class="empty-msg" style="margin-top: 15px; font-size: 0.9em; color: #666;">
+              * Este proyecto tiene tareas, pero ninguna está asignada a ti.
+            </div>
 
-            <div v-if="p.estado?.nombre !== 'Finalizado'" class="reporte-empleado-bloque">
+            <div v-if="p.estado?.nombre !== 'Finalizado' && reportes[p.id]" class="reporte-empleado-bloque">
               <hr />
               <h4>Reporte de Progreso y Herramientas (Proyecto)</h4>
               
               <div class="form-group">
                 <label>Comentario de Entrega:</label>
-                <textarea 
-                  v-model="reportes[p.id].comentario" 
+                <textarea
+                  v-model="reportes[p.id].comentario"
                   placeholder="Escribe los detalles de lo que hiciste en este proyecto..."
                 ></textarea>
               </div>
@@ -122,83 +124,171 @@
 </template>
 
 <script>
+import { useAuth0 } from 'libreria_vue_auth';
 import api from '../services/api';
 
 export default {
+  name: 'PortalEmpleado',
   emits: ['volver'],
+  setup() {
+    const { user, isAuthenticated } = useAuth0();
+    return { user, isAuthenticated };
+  },
   data() {
     return {
-      nombreBusqueda: '',
+      cargandoPortal: true,
       empleadoActivo: null,
       misProyectos: [],
-      reportes: {}, 
+      reportes: {},
       errorBusqueda: null
     };
   },
+  watch: {
+    user: {
+      immediate: true,
+      handler(newUser) {
+        if (newUser) {
+          this.vincularEmpleadoAutomatico();
+        } else {
+          this.cargandoPortal = false;
+        }
+      }
+    }
+  },
   methods: {
-    async buscarEmpleado() {
+    async vincularEmpleadoAutomatico() {
+      this.cargandoPortal = true;
       this.errorBusqueda = null;
+
       try {
         const res = await api.getEmpleados();
         const empleados = res.data.error ? [] : res.data;
-        const encontrado = empleados.find(
-          e => e.nombre.toLowerCase() === this.nombreBusqueda.toLowerCase()
+        
+        const encontrado = empleados.find(e =>
+          (e.email && e.email.toLowerCase() === this.user.email?.toLowerCase()) ||
+          (e.nombre && e.nombre.toLowerCase() === this.user.name?.toLowerCase())
         );
+
         if (!encontrado) {
-          this.errorBusqueda = 'Empleado no encontrado. Verifica tu nombre.';
+          this.empleadoActivo = null;
           return;
         }
+
         this.empleadoActivo = encontrado;
         await this.cargarProyectos();
       } catch (e) {
-        this.errorBusqueda = 'Error al buscar empleado.';
+        console.error(e);
+        this.errorBusqueda = 'Error de comunicación con el servicio de recursos.';
+      } finally {
+        this.cargandoPortal = false;
       }
     },
     async cargarProyectos() {
       try {
         const res = await api.getProyectosPorEmpleado(this.empleadoActivo.id);
-        this.misProyectos = res.data.error ? [] : res.data;
+        const proyectosRaw = res.data.error ? [] : res.data;
         
-        this.misProyectos.forEach(p => {
-          this.reportes[p.id] = {
-            comentario: '',
-            herramientas: [],
-            nuevaHerramientaNombre: '',
-            nuevaHerramientaCosto: 0
+        const nuevosReportes = { ...this.reportes };
+        
+        // Mapeamos y pre-construimos los datos para evitar sobrecarga reactiva
+        this.misProyectos = proyectosRaw.map(p => {
+          if (!nuevosReportes[p.id]) {
+            nuevosReportes[p.id] = {
+              comentario: '',
+              herramientas: [],
+              nuevaHerramientaNombre: '',
+              nuevaHerramientaCosto: 0
+            };
+          }
+
+          // Pre-filtrado de tareas del trabajador actual
+          const tareasFiltradas = p.tareas ? p.tareas.filter(tarea => {
+            const idEncargado = tarea.empleadoId || (tarea.empleado && tarea.empleado.id) || tarea.trabajadorId;
+            return Number(idEncargado) === Number(this.empleadoActivo.id);
+          }) : [];
+
+          return {
+            ...p,
+            misTareas: tareasFiltradas
           };
         });
+
+        this.reportes = nuevosReportes;
       } catch (e) {
         console.error('Error cargando proyectos:', e);
       }
     },
-    agregarHerramienta(proyectoId) {
+    async agregarHerramienta(proyectoId) {
       const r = this.reportes[proyectoId];
-      if (r.nuevaHerramientaNombre.trim() === '') return;
+      if (!r.nuevaHerramientaNombre || r.nuevaHerramientaNombre.trim() === '') return;
 
-      r.herramientas.push({
-        nombre: r.nuevaHerramientaNombre,
-        costo: r.nuevaHerramientaCosto || 0
-      });
+      const nombre = r.nuevaHerramientaNombre.trim();
+      const costo = parseFloat(r.nuevaHerramientaCosto) || 0;
+
+      try {
+        const nuevoGasto = {
+          descripcion: nombre,
+          monto: costo,
+          tipo: 'Herramienta',
+          proyecto: { id: proyectoId },
+          empleado: { id: this.empleadoActivo.id }
+        };
+
+        const response = await fetch('http://localhost:8081/api/gastos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(nuevoGasto)
+        });
+
+        if (response.ok) {
+          const dataGasto = await response.json().catch(() => ({}));
+          // Guardamos el id asignado por la base de datos para poder gestionarlo después
+          r.herramientas.push({ id: dataGasto.id || null, nombre, costo });
+          alert("¡Herramienta registrada exitosamente en los costos del proyecto!");
+        } else {
+          alert("No se pudo guardar el costo en el servidor.");
+        }
+      } catch (error) {
+        console.error("Error al guardar herramienta en el backend:", error);
+        alert("Error de conexión con la base de datos.");
+      }
 
       r.nuevaHerramientaNombre = '';
       r.nuevaHerramientaCosto = 0;
     },
-    eliminarHerramienta(proyectoId, index) {
-      this.reportes[proyectoId].herramientas.splice(index, 1);
+    async eliminarHerramienta(proyectoId, index) {
+      const r = this.reportes[proyectoId];
+      const herramienta = r.herramientas[index];
+
+      // Sincronización: Si tiene id de base de datos, lo borramos del servidor
+      if (herramienta.id) {
+        if (!confirm(`¿Seguro que deseas eliminar esta herramienta? Se borrará permanentemente de la base de datos de gastos.`)) {
+          return;
+        }
+        try {
+          const response = await fetch(`http://localhost:8081/api/gastos/${herramienta.id}`, {
+            method: 'DELETE'
+          });
+          if (!response.ok) {
+            console.warn("No se pudo borrar del servidor, procediendo a remover de la interfaz local.");
+          }
+        } catch (error) {
+          console.error("Error al conectar con la API de borrado de gastos:", error);
+        }
+      }
+      
+      r.herramientas.splice(index, 1);
     },
     async finalizarTarea(proyectoId, tarea) {
       if(confirm(`¿Seguro que deseas marcar como LISTA la tarea: ${tarea.nombre}?`)) {
         try {
-          // Actualizamos la tarea en el Backend a "Listo"
           const tareaActualizada = { ...tarea, estado: 'Listo' };
           await api.actualizarTarea(tarea.id, tareaActualizada);
-          
-          // Actualizamos visualmente en el portal
-          tarea.estado = 'Listo'; 
+          tarea.estado = 'Listo';
           alert('Tarea finalizada y sincronizada con el administrador.');
         } catch (e) {
           console.error(e);
-          alert('Error al sincronizar la tarea con el servidor. Verifica que tengas api.actualizarTarea creado.');
+          alert('Error al sincronizar la tarea con el servidor.');
         }
       }
     },
@@ -211,7 +301,7 @@ export default {
           estadoId: estadoId,
           empleadoCompletaId: this.empleadoActivo.id,
           comentario: reporteProyecto.comentario,
-          herramientas: reporteProyecto.herramientas,
+          herramientas: reporteProyecto.herramientas.map(h => ({ nombre: h.nombre, costo: h.costo })),
           costoHerramientas: costoHerramientasTotales
         };
 
@@ -222,8 +312,27 @@ export default {
           const fechaFin = new Date(body.fechaFin);
           const diasDiferencia = Math.max(1, Math.round((fechaFin - fechaInicio) / (1000 * 60 * 60 * 24)));
           
-          const horasDedicadasEstimadas = diasDiferencia * 8; 
+          const horasDedicadasEstimadas = diasDiferencia * 8;
           body.horasDedicadas = horasDedicadasEstimadas;
+
+          const valorHoraEmpleado = this.empleadoActivo.valorHora || 0;
+          const costoManoObraCalculado = horasDedicadasEstimadas * valorHoraEmpleado;
+
+          try {
+            await fetch('http://localhost:8081/api/gastos', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                descripcion: `Mano de Obra - ${this.empleadoActivo.nombre} (${horasDedicadasEstimadas} hrs)`,
+                monto: costoManoObraCalculado,
+                tipo: 'Mano de Obra',
+                proyecto: { id: proyecto.id },
+                empleado: { id: this.empleadoActivo.id }
+              })
+            });
+          } catch (errGasto) {
+            console.error("No se pudo auto-registrar el costo de mano de obra:", errGasto);
+          }
         }
 
         await api.actualizarEstadoProyecto(proyecto.id, body);
@@ -238,12 +347,6 @@ export default {
       } catch (e) {
         alert('Error al actualizar estado');
       }
-    },
-    cerrarSesion() {
-      this.empleadoActivo = null;
-      this.misProyectos = [];
-      this.nombreBusqueda = '';
-      this.reportes = {};
     }
   }
 };

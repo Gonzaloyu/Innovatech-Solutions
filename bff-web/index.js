@@ -175,17 +175,14 @@ app.post('/api/bff/proyectos', async (req, res) => {
   }
 });
 
-// AQUI ESTA LA COMPOSICIÓN CORREGIDA PARA QUE APAREZCAN LAS TAREAS
 app.get('/api/bff/proyectos/empleado/:empleadoId', async (req, res) => {
   try {
-    // 1. Buscamos los proyectos asignados al empleado
+
     const proyectos = await proyectosPorEmpleadoBreaker.fire(req.params.empleadoId);
     
     if (!Array.isArray(proyectos)) {
       return res.json(proyectos);
     }
-
-    // 2. Por cada proyecto, buscamos sus tareas y las adjuntamos
     const proyectosConTareas = await Promise.all(
       proyectos.map(async (proyecto) => {
         let tareasDelProyecto = [];
@@ -431,13 +428,40 @@ app.get('/api/bff/tareas-con-empleado/:id', async (req, res) => {
   }
 });
 
-app.get('/api/bff/proyectos-detalle', async (req, res) => {
+app.get('/api/bff/proyectos/empleado/:empleadoId', async (req, res) => {
   try {
-    const proyectos = await proyectosGetBreaker.fire();
-    res.json(proyectos);
+    const empleadoIdNum = Number(req.params.empleadoId);
+    const proyectos = await proyectosPorEmpleadoBreaker.fire(req.params.empleadoId);
+    
+    if (!Array.isArray(proyectos)) {
+      return res.json(proyectos);
+    }
+
+    const proyectosConTareas = await Promise.all(
+      proyectos.map(async (proyecto) => {
+        let tareasDelEmpleado = [];
+        try {
+          const resultadoTareas = await tareasPorProyectoBreaker.fire(proyecto.id);
+          if (Array.isArray(resultadoTareas)) {
+            tareasDelEmpleado = resultadoTareas.filter(
+              tarea => Number(tarea.empleadoId) === empleadoIdNum
+            );
+          }
+        } catch (err) {
+          console.warn(`No se pudieron cargar tareas para el proyecto ${proyecto.id}`);
+        }
+        
+        return {
+          ...proyecto,
+          tareas: tareasDelEmpleado
+        };
+      })
+    );
+
+    res.json(proyectosConTareas);
   } catch (error) {
-    console.error('BFF Error proyectos-detalle:', error.message);
-    res.status(500).json({ error: 'Error al obtener detalle de proyectos' });
+    console.error('BFF Error proyectos por empleado:', error.message);
+    res.status(500).json({ error: 'Error al obtener proyectos del empleado' });
   }
 });
 

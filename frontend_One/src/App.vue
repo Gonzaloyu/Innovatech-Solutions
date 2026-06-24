@@ -1,23 +1,14 @@
 <template>
   <div id="app">
     <header class="main-header">
-      <h1>Innovatech Solutions</h1>
-      <p>Plataforma Inteligente de Gestión Integral</p>
+      <div class="header-title">
+        <h1>Innovatech Solutions</h1>
+        <p>Plataforma Inteligente de Gestión Integral</p>
+      </div>
+      
       <div v-if="isAuthenticated" class="user-nav">
-        <span class="user-name">Hola, {{ user?.name }}</span>
+        <span class="user-name">Hola, {{ user.email }}</span>
         
-        <button v-if="vistaActual !== 'dashboard'" @click="vistaActual = 'dashboard'" class="btn-volver" style="padding: 6px 14px; font-size: 0.85rem;">
-          Volver al Inicio
-        </button>
-
-        <button v-if="vistaActual !== 'planning'" @click="vistaActual = 'planning'" class="btn-proyecto" style="padding: 6px 14px; font-size: 0.85rem;">
-          Planificación Admin
-        </button>
-
-        <button v-if="vistaActual !== 'portal'" @click="vistaActual = 'portal'" class="btn-portal" style="padding: 6px 14px; font-size: 0.85rem;">
-          Portal Empleado
-        </button>
-
         <button @click="logout({ logoutParams: { returnTo: window.location.origin } })" class="auth-btn logout">
           Cerrar Sesión
         </button>
@@ -30,26 +21,27 @@
 
     <template v-else-if="isAuthenticated">
 
-      <template v-if="vistaActual === 'dashboard'">
-        <div v-if="kpis" class="kpi-container">
+      <template v-if="rol === 'admin'">
+        
+        <div class="kpi-container">
           <div class="kpi-card green">
-            <p class="kpi-numero">{{ kpis.totalProyectos }}</p>
+            <p class="kpi-numero">{{ kpisCalculados.totalProyectos }}</p>
             <p class="kpi-label">Total Proyectos</p>
           </div>
           <div class="kpi-card blue">
-            <p class="kpi-numero">{{ kpis.proyectosEnEjecucion }}</p>
+            <p class="kpi-numero">{{ kpisCalculados.proyectosEnEjecucion }}</p>
             <p class="kpi-label">En Ejecución</p>
           </div>
           <div class="kpi-card red">
-            <p class="kpi-numero">{{ kpis.proyectosAtrasados }}</p>
+            <p class="kpi-numero">{{ kpisCalculados.proyectosAtrasados }}</p>
             <p class="kpi-label">Atrasados</p>
           </div>
           <div class="kpi-card purple">
-            <p class="kpi-numero">{{ kpis.totalEmpleados }}</p>
+            <p class="kpi-numero">{{ kpisCalculados.totalEmpleados }}</p>
             <p class="kpi-label">Empleados</p>
           </div>
           <div class="kpi-card orange">
-            <p class="kpi-numero">{{ kpis.totalAsignaciones }}</p>
+            <p class="kpi-numero">{{ kpisCalculados.totalAsignaciones }}</p>
             <p class="kpi-label">Asignaciones</p>
           </div>
         </div>
@@ -77,6 +69,14 @@
                 Ver Empleados ({{ empleados.length }})
               </button>
             </div>
+          </div>
+
+          <div class="module" style="margin-top: 30px;">
+            <AdminPlanning 
+              :proyectos="proyectosParaPlanning"
+              :empleados="empleados"
+              @empleado-asignado="cargarDatos"
+            />
           </div>
         </div>
 
@@ -107,7 +107,7 @@
                   <tr v-for="p in proyectos" :key="p.id">
                     <td><strong>{{ p.nombre }}</strong></td>
                     <td>
-                      <span :class="'status ' + (p.estado?.nombre?.toLowerCase().replace(/ /g, '-') || '')">
+                      <span :class="claseEstado(p.estado?.nombre)">
                         {{ p.estado?.nombre }}
                       </span>
                     </td>
@@ -132,7 +132,6 @@
                     <th>Cargo</th>
                     <th>Nivel</th>
                     <th>Departamento</th>
-                    <th>Valor/Hr</th> 
                   </tr>
                 </thead>
                 <tbody>
@@ -150,26 +149,18 @@
         </div>
       </template>
 
-      <PortalEmpleado 
-        v-else-if="vistaActual === 'portal'"
-        @volver="vistaActual = 'dashboard'"
-      />
-
-      <AdminPlanning 
-        v-else-if="vistaActual === 'planning'"
-        :proyectos="proyectosParaPlanning"
-        :empleados="empleados"
-        @empleado-asignado="cargarDatos"
-      />
+      <template v-else>
+        <PortalEmpleado />
+      </template>
 
     </template>
 
     <main v-else class="login-welcome">
       <div class="welcome-card">
         <h2>Acceso Restringido</h2>
-        <p>Inicia sesión para gestionar proyectos y recursos.</p>
+        <p>Inicia sesión para acceder a la plataforma.</p>
         <button @click="loginWithRedirect()" class="auth-btn login">
-          Iniciar Sesión con Auth0
+          Iniciar Sesión
         </button>
       </div>
     </main>
@@ -182,31 +173,62 @@
 
 <script>
 import { useAuth0 } from 'libreria_vue_auth';
-import { toRaw } from 'vue'; // Importado para limpiar la consola
+import { toRaw, ref, watch } from 'vue';
 import api from './services/api';
 import ProyectoForm from './components/ProyectoForm.vue';
 import EmpleadoForm from './components/EmpleadoForm.vue';
 import PortalEmpleado from './components/PortalEmpleado.vue';
-import AdminPlanning from './components/AdminPlanning.vue'; // Componente re-importado
+import AdminPlanning from './components/AdminPlanning.vue';
 
 export default {
   name: 'App',
   components: { ProyectoForm, EmpleadoForm, PortalEmpleado, AdminPlanning },
   setup() {
     const { loginWithRedirect, logout, user, isAuthenticated, isLoading } = useAuth0();
-    return { loginWithRedirect, logout, user, isAuthenticated, isLoading };
+
+    const obtenerRol = () => {
+      if (!user.value) return null;
+      const roles = user.value['https://innovatech.com/roles'] || [];
+      return roles[0]; 
+    };
+
+    return { 
+      loginWithRedirect, 
+      logout, 
+      user, 
+      isAuthenticated, 
+      isLoading,
+      rol: obtenerRol() 
+    };
   },
   data() {
     return {
-      vistaActual: 'dashboard',
       proyectos: [],
       empleados: [],
-      kpis: null,
+      kpisBackend: null,
       modalActivo: null
     };
   },
   computed: {
-    // Computada restaurada para pasar los datos limpios al AdminPlanning
+    kpisCalculados() {
+      let enEjecucion = 0;
+      let atrasados = 0;
+
+      this.proyectos.forEach(p => {
+        const estadoLimpio = this.limpiarTexto(p.estado?.nombre || p.estado);
+        
+        if (estadoLimpio === 'en ejecucion') enEjecucion++;
+        if (estadoLimpio === 'atrasado' || estadoLimpio === 'atrasados') atrasados++;
+      });
+
+      return {
+        totalProyectos: this.proyectos.length,
+        proyectosEnEjecucion: enEjecucion,
+        proyectosAtrasados: atrasados,
+        totalEmpleados: this.empleados.length,
+        totalAsignaciones: this.kpisBackend?.totalAsignaciones || 0
+      };
+    },
     proyectosParaPlanning() {
       return this.proyectos.map(p => ({
         ...p,
@@ -215,7 +237,27 @@ export default {
       }));
     }
   },
+  watch: {
+    rolUsuario(nuevoRol) {
+      if (nuevoRol && nuevoRol !== 'trabajador') {
+        this.cargarDatos();
+      }
+    }
+  },
   methods: {
+    limpiarTexto(texto) {
+      if (!texto) return '';
+      return texto
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") 
+        .toLowerCase()
+        .trim();
+    },
+    claseEstado(estado) {
+      const limpio = this.limpiarTexto(estado);
+      return 'status ' + limpio.replace(/ /g, '-');
+    },
     async cargarDatos() {
       if (!this.isAuthenticated) return;
       try {
@@ -224,13 +266,11 @@ export default {
           api.getEmpleados(),
           api.getKpis()
         ]);
-        
+
         this.proyectos = resProyectos?.data?.error ? [] : (resProyectos?.data || resProyectos || []);
         this.empleados = resEmpleados?.data?.error ? [] : (resEmpleados?.data || resEmpleados || []);
-        this.kpis      = resKpis?.data?.error      ? null : (resKpis?.data || resKpis || null);
+        this.kpisBackend = resKpis?.data?.error ? null : (resKpis?.data || resKpis || null);
 
-        // Consola limpia usando toRaw sin bucles reactivos
-        console.log("Empleados cargados en App.vue:", toRaw(this.empleados));
       } catch (error) {
         console.error('Error al cargar datos:', error);
       }
@@ -243,11 +283,11 @@ export default {
     }
   },
   mounted() {
-    if (this.isAuthenticated) this.cargarDatos();
-  },
-  watch: {
-    isAuthenticated(newVal) {
-      if (newVal) this.cargarDatos();
+    if (this.isAuthenticated && this.user) {
+      this.cargarRol();
+      if (this.rolUsuario !== 'trabajador') {
+        this.cargarDatos();
+      }
     }
   }
 };

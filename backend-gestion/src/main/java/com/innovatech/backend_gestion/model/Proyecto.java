@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDate;
+import java.util.Set;
 
 @Entity
 @Table(name = "proyectos")
@@ -40,4 +42,17 @@ public class Proyecto {
 
     @Column(name = "empleado_id")
     private Long empleadoId;
+
+    // --- ¡NUEVO: RELACIONES AGREGADAS! ---
+    // Con esto el frontend dejará de mostrar "Sin asignar" y recibirá el equipo y tareas.
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "proyecto_id", insertable = false, updatable = false)
+    @JsonIgnoreProperties("proyecto")
+    private Set<Asignacion> asignaciones;
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "proyecto_id", insertable = false, updatable = false)
+    @JsonIgnoreProperties("proyecto")
+    private Set<Tarea> tareas;
 }

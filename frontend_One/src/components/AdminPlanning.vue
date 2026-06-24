@@ -220,13 +220,53 @@
 
           <div v-else-if="pestañaActiva === 'Costos'">
             <h4>Presupuesto de Infraestructura y Desarrollo</h4>
-            <div class="cost-row" style="display: flex; gap: 10px; align-items: center;">
+            <div class="cost-row" style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
               <label>Presupuesto Estimado (USD):</label>
               <input type="number" v-model.number="proyectoSeleccionado.costo" style="width: 150px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;" />
             </div>
-            <p style="font-size: 0.9rem; color: #64748b; margin-top: 10px;">
-              Costo acumulado dinámico basado en horas operativas de desarrollo y recursos extras.
-            </p>
+
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+
+            <h4>Desglose de Costos Reales</h4>
+            <div v-if="cargandoGastos" class="empty-state">
+              Cargando gastos reportados...
+            </div>
+            <div v-else-if="gastosProyecto.length === 0" class="empty-state">
+              No hay costos de recursos ni mano de obra reportados en este proyecto todavía.
+            </div>
+            
+            <div class="tasks-table-wrapper" v-else>
+              <table class="planning-table">
+                <thead>
+                  <tr>
+                    <th>Tipo de Gasto</th>
+                    <th>Descripción</th>
+                    <th>Fecha de Registro</th>
+                    <th>Monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="gasto in gastosProyecto" :key="gasto.id">
+                    <td>
+                      <span class="ms-badge">{{ gasto.tipo || 'Recurso' }}</span>
+                    </td>
+                    <td>{{ gasto.descripcion }}</td>
+                    <td>{{ formatearFecha(gasto.fechaRegistro) || 'N/A' }}</td>
+                    <td><strong>${{ gasto.monto }}</strong></td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr style="background-color: #f1f5f9;">
+                    <td colspan="3" style="text-align: right; padding: 10px; font-size: 1.1rem;">
+                      <strong>Costo Real Total Generado:</strong>
+                    </td>
+                    <td style="padding: 10px; font-size: 1.1rem; color: #0f172a;">
+                      <strong>${{ costoTotalGastos }}</strong>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
 
           <div v-else-if="pestañaActiva === 'Historial'">
@@ -268,6 +308,10 @@ const proyectosLocales = ref([]);
 const asignacionesActuales = ref([]);
 const cargandoAsignaciones = ref(false);
 const cargandoTareas = ref(false);
+
+// --- VARIABLES PARA COSTOS DINÁMICOS ---
+const gastosProyecto = ref([]);
+const cargandoGastos = ref(false);
 
 const nuevaTarea = ref({ nombre: '', empleadoId: '', fechaInicio: '', fechaLimite: '' });
 const nuevoMiembro = ref({ empleadoId: '' });
@@ -316,6 +360,25 @@ const cargarTareasDelProyecto = async (proyectoId) => {
   }
 };
 
+// --- MÉTODO PARA CARGAR COSTOS / GASTOS ---
+const cargarGastosDelProyecto = async (proyectoId) => {
+  if (!proyectoId) return;
+  cargandoGastos.value = true;
+  try {
+    const response = await fetch(`http://localhost:8081/api/gastos/proyecto/${proyectoId}`);
+    if (response.ok) {
+      gastosProyecto.value = await response.json();
+    } else {
+      gastosProyecto.value = [];
+    }
+  } catch (error) {
+    console.error("Error al cargar gastos desde el backend:", error);
+    gastosProyecto.value = [];
+  } finally {
+    cargandoGastos.value = false;
+  }
+};
+
 // ==========================================
 // WATCHERS
 // ==========================================
@@ -336,6 +399,7 @@ watch(() => props.proyectos, (nuevosProyectos) => {
       proyectoSeleccionado.value = proyectosLocales.value[0];
       cargarAsignaciones(proyectoSeleccionado.value.id);
       cargarTareasDelProyecto(proyectoSeleccionado.value.id);
+      cargarGastosDelProyecto(proyectoSeleccionado.value.id); // Llama los gastos al cargar
     } else {
       const tareasActuales = proyectoSeleccionado.value.tareas || [];
       proyectoSeleccionado.value = mapeado;
@@ -352,6 +416,11 @@ const totalTareasCompletadas = computed(() => {
   return proyectosLocales.value.reduce((acc, p) => acc + (p.tareas ? p.tareas.filter(t => t.estado === 'Listo' || t.estado === 'Finalizada').length : 0), 0);
 });
 const totalCostos = computed(() => proyectosLocales.value.reduce((acc, p) => acc + (p.costo || 0), 0));
+
+// --- CALCULA EL TOTAL GENERADO EN GASTOS REALES ---
+const costoTotalGastos = computed(() => {
+  return gastosProyecto.value.reduce((acc, gasto) => acc + (gasto.monto || 0), 0);
+});
 
 // ==========================================
 // METODOS AUXILIARES
@@ -393,6 +462,7 @@ const seleccionarProyecto = (proyecto) => {
   proyectoSeleccionado.value = proyecto;
   cargarAsignaciones(proyecto.id);
   cargarTareasDelProyecto(proyecto.id);
+  cargarGastosDelProyecto(proyecto.id); // Refresca los gastos al cambiar de proyecto
 };
 
 // ==========================================
@@ -450,7 +520,7 @@ const agregarTarea = async () => {
     nombre: nuevaTarea.value.nombre,
     descripcion: '',
     proyecto: { id: Number(proyectoSeleccionado.value.id) },
-    empleadoId: Number(nuevaTarea.value.empleadoId), // 🔑 Guardamos el ID del empleado directo
+    empleadoId: Number(nuevaTarea.value.empleadoId),
     fechaInicio: nuevaTarea.value.fechaInicio,
     fechaLimite: nuevaTarea.value.fechaLimite,
     estado: 'Pendiente'
