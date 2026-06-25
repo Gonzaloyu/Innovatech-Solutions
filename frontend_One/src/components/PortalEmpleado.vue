@@ -14,7 +14,7 @@
       <div class="welcome-card">
         <h2>Portal del Empleado</h2>
         <p class="error" style="font-size: 1.1rem; margin-bottom: 20px;">
-          ⚠️ Tu cuenta ({{ user?.email }}) no está registrada como empleado en el sistema.
+          Tu cuenta ({{ user?.email }}) no está registrada como empleado en el sistema.
         </p>
         <p>Contacta al administrador para que registre tu correo exactamente igual.</p>
       </div>
@@ -57,7 +57,7 @@
               <h4>Tus tareas vinculadas:</h4>
               <ul class="lista-tareas">
                 <li v-for="tarea in p.misTareas" :key="tarea.id" class="tarea-item">
-                  <span>📌 {{ tarea.nombre }}</span>
+                  <span>{{ tarea.nombre }}</span>
                   <select
                     v-model="tarea.estado"
                     class="status-select-badge"
@@ -96,7 +96,7 @@
                 </div>
                 <ul class="lista-herramientas-agregadas">
                   <li v-for="(h, idx) in reportes[p.id].herramientas" :key="idx">
-                    🛠️ {{ h.nombre }} (Costó: ${{ h.costo }})
+                    {{ h.nombre }} (Costó: ${{ h.costo }})
                     <button type="button" @click="eliminarHerramienta(p.id, idx)" class="btn-del-tool">x</button>
                   </li>
                 </ul>
@@ -113,7 +113,7 @@
             </div>
 
             <div v-else class="proyecto-completado">
-              <p>✅ <strong>Proyecto Completado</strong> el {{ p.fechaFin }} por {{ empleadoActivo.nombre }}</p>
+              <p> <strong>Proyecto Completado</strong> el {{ p.fechaFin }} por {{ empleadoActivo.nombre }}</p>
               <p class="costo-total-resumen">
                 Costo Total Calculado: ${{ p.costoTotalCalculado || 0 }}
               </p>

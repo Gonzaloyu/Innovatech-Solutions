@@ -502,3 +502,64 @@ select, option {
   background-color: #3b82f6;
   color: white;
 }
+.tiempo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.tiempo-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tiempo-lbl {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 600;
+}
+.tiempo-val {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.formula-nota {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-style: italic;
+  margin: 6px 0 18px;
+}
+.resumen-costos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+.resumen-item {
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.resumen-item.total-final {
+  background: #0f172a;
+}
+.resumen-item.total-final .resumen-lbl,
+.resumen-item.total-final .resumen-val {
+  color: #fff;
+}
+.resumen-lbl {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+}
+.resumen-val {
+  font-size: 1.15rem;
+  font-weight: 700;
+}

@@ -474,8 +474,8 @@ body {
     top: 0;
     background: white;
     border-radius: 16px 16px 0 0;
+    z-index: 10; 
 }
-
 .modal-header h2 {
     margin: 0;
     font-size: 1.2rem;
@@ -1020,4 +1020,85 @@ body {
 
 .proyecto-acciones .btn-actualizar:hover {
   opacity: 0.9;
+}
+
+.btn-volver {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #334155;
+  transition: background 0.2s;
+}
+.btn-volver:hover {
+  background: #e2e8f0;
+}
+.badge.planning {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+
+.tiempo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.tiempo-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tiempo-lbl {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 600;
+}
+.tiempo-val {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.formula-nota {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-style: italic;
+  margin: 6px 0 18px;
+}
+.resumen-costos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+.resumen-item {
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.resumen-item.total-final {
+  background: #0f172a;
+}
+.resumen-item.total-final .resumen-lbl,
+.resumen-item.total-final .resumen-val {
+  color: #fff;
+}
+.resumen-lbl {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+}
+.resumen-val {
+  font-size: 1.15rem;
+  font-weight: 700;
 }

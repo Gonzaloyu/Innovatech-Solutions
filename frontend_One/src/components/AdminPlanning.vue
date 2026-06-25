@@ -20,7 +20,7 @@
     </div>
 
     <div class="main-layout">
-      
+
       <div class="projects-sidebar">
         <div class="sidebar-header">
           <h3>Proyectos</h3>
@@ -53,7 +53,7 @@
       </div>
 
       <div class="planning-detail" v-if="proyectoSeleccionado">
-        
+
         <div class="detail-header">
           <h2>{{ proyectoSeleccionado.nombre }}</h2>
           <span class="status-pill big" :class="(proyectoSeleccionado.estado?.nombre || proyectoSeleccionado.estado || 'en-planificación').toLowerCase().replace(/ /g, '-')">
@@ -78,7 +78,7 @@
         </div>
 
         <div class="tab-content">
-          
+
           <div v-if="pestañaActiva === 'Equipo'">
             <form @submit.prevent="asignarTrabajador" class="task-inline-form">
               <select v-model="nuevoMiembro.empleadoId" class="select-ms" required>
@@ -132,7 +132,6 @@
                 required
                 class="input-task-name"
               />
-              
               <select v-model="nuevaTarea.empleadoId" class="select-ms" required :disabled="asignacionesActuales.length === 0">
                 <option value="" disabled selected>
                   {{ asignacionesActuales.length === 0 ? 'Sin equipo asignado aún' : 'Trabajador asignado...' }}
@@ -164,7 +163,7 @@
                 {{ cargandoTareas ? '...' : 'Agregar' }}
               </button>
             </form>
-            
+
             <p v-if="asignacionesActuales.length === 0" class="form-hint">
               Asigna al menos un trabajador en la pestaña "Equipo" antes de crear tareas.
             </p>
@@ -175,7 +174,7 @@
             <div v-else-if="!proyectoSeleccionado.tareas || proyectoSeleccionado.tareas.length === 0" class="empty-state">
               Sin tareas aún. Agrega la primera.
             </div>
-            
+
             <div class="tasks-table-wrapper" v-else>
               <table class="planning-table">
                 <thead>
@@ -203,11 +202,11 @@
                       </select>
                     </td>
                     <td>
-                      <span :class="{ 'line-through': tarea.estado === 'Listo' }"><strong>{{ tarea.nombre }}</strong></span>
+                      <span :class="{ 'line-through': tarea.estado === 'Finalizado' }"><strong>{{ tarea.nombre }}</strong></span>
                     </td>
                     <td>{{ nombreTrabajadorTarea(tarea) }}</td>
                     <td>{{ formatearFecha(tarea.fechaInicio) }}</td>
-                    <td :class="{ 'date-alert': (tarea.estado === 'Atrasado' || (esAtrasado(tarea.fechaLimite) && tarea.estado !== 'Listo')) }">
+                    <td :class="{ 'date-alert': (esAtrasado(tarea.fechaLimite) && tarea.estado !== 'Finalizado') }">
                       {{ formatearFecha(tarea.fechaLimite) }}
                     </td>
                     <td>
@@ -228,6 +227,45 @@
 
             <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
+            <h4>Tiempo de Ejecución</h4>
+            <div class="tiempo-grid">
+              <div class="tiempo-item">
+                <span class="tiempo-lbl">Fecha Inicio</span>
+                <span class="tiempo-val">{{ formatearFecha(proyectoSeleccionado.fechaInicio) }}</span>
+              </div>
+              <div class="tiempo-item">
+                <span class="tiempo-lbl">{{ esFinalizado(proyectoSeleccionado) ? 'Fecha Fin Real' : 'Estado' }}</span>
+                <span class="tiempo-val">
+                  {{ esFinalizado(proyectoSeleccionado) ? formatearFecha(proyectoSeleccionado.fechaFin) : 'En curso (calculando hasta hoy)' }}
+                </span>
+              </div>
+              <div class="tiempo-item">
+                <span class="tiempo-lbl">Días {{ esFinalizado(proyectoSeleccionado) ? 'trabajados' : 'transcurridos' }}</span>
+                <span class="tiempo-val">{{ diasTranscurridosProyecto }} días</span>
+              </div>
+              <div class="tiempo-item">
+                <span class="tiempo-lbl">Horas estimadas</span>
+                <span class="tiempo-val">{{ horasEstimadasProyecto }} hrs</span>
+              </div>
+            </div>
+
+            <p class="formula-nota">
+              Fórmula: días = ({{ esFinalizado(proyectoSeleccionado) ? 'fecha fin real' : 'fecha actual' }} − fecha inicio) · horas estimadas = días × 8 hrs/día · costo mano de obra estimado = horas × valor/hora promedio del equipo asignado.
+            </p>
+
+            <div class="tiempo-grid" style="margin-top: 10px;">
+              <div class="tiempo-item">
+                <span class="tiempo-lbl">Valor/hora promedio del equipo</span>
+                <span class="tiempo-val">${{ valorHoraPromedioEquipo.toFixed(2) }}</span>
+              </div>
+              <div class="tiempo-item">
+                <span class="tiempo-lbl">Costo Mano de Obra Estimado</span>
+                <span class="tiempo-val">${{ costoManoObraEstimado.toLocaleString() }}</span>
+              </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+
             <h4>Desglose de Costos Reales</h4>
             <div v-if="cargandoGastos" class="empty-state">
               Cargando gastos reportados...
@@ -235,7 +273,7 @@
             <div v-else-if="gastosProyecto.length === 0" class="empty-state">
               No hay costos de recursos ni mano de obra reportados en este proyecto todavía.
             </div>
-            
+
             <div class="tasks-table-wrapper" v-else>
               <table class="planning-table">
                 <thead>
@@ -267,6 +305,25 @@
                   </tr>
                 </tfoot>
               </table>
+            </div>
+
+            <div class="resumen-costos-grid">
+              <div class="resumen-item">
+                <span class="resumen-lbl">Total Herramientas</span>
+                <span class="resumen-val">${{ totalHerramientas.toLocaleString() }}</span>
+              </div>
+              <div class="resumen-item">
+                <span class="resumen-lbl">Total Mano de Obra Registrado</span>
+                <span class="resumen-val">${{ totalManoObra.toLocaleString() }}</span>
+              </div>
+              <div class="resumen-item total-final">
+                <span class="resumen-lbl">Costo Real Total</span>
+                <span class="resumen-val">${{ costoTotalGastos.toLocaleString() }}</span>
+              </div>
+              <div class="resumen-item" :class="diferenciaPresupuesto >= 0 ? 'text-success' : 'text-danger'">
+                <span class="resumen-lbl">{{ diferenciaPresupuesto >= 0 ? 'Ahorro vs presupuesto' : 'Sobrecosto vs presupuesto' }}</span>
+                <span class="resumen-val">${{ Math.abs(diferenciaPresupuesto).toLocaleString() }}</span>
+              </div>
             </div>
           </div>
 
@@ -310,7 +367,6 @@ const asignacionesActuales = ref([]);
 const cargandoAsignaciones = ref(false);
 const cargandoTareas = ref(false);
 
-// --- VARIABLES PARA COSTOS DINÁMICOS ---
 const gastosProyecto = ref([]);
 const cargandoGastos = ref(false);
 
@@ -335,7 +391,7 @@ const cargarAsignaciones = async (proyectoId) => {
         id: a.id,
         empleadoId: a.empleadoId,
         rol: a.rol || 'Desarrollador',
-        empleado: emp ? { id: emp.id, nombre: emp.nombre, email: emp.email } : null
+        empleado: emp ? { id: emp.id, nombre: emp.nombre, email: emp.email, valorHora: emp.valorHora } : null
       };
     }).filter(item => item !== null && item.empleado !== null);
   } catch (error) {
@@ -350,9 +406,9 @@ const cargarTareasDelProyecto = async (proyectoId) => {
   if (!proyectoId) return;
   cargandoTareas.value = true;
   try {
-    const respuesta = await api.getTareasConEmpleado(); // o crea un endpoint filtrado por proyecto si existe
+    const respuesta = await axios.get(`http://localhost:3000/api/bff/tareas/proyecto/${proyectoId}`);
     if (proyectoSeleccionado.value && proyectoSeleccionado.value.id === proyectoId) {
-      proyectoSeleccionado.value.tareas = (respuesta.data || []).filter(t => t.proyecto?.id === proyectoId || t.proyectoId === proyectoId);
+      proyectoSeleccionado.value.tareas = respuesta.data || [];
     }
   } catch (error) {
     console.error('Error al cargar tareas:', error);
@@ -361,7 +417,6 @@ const cargarTareasDelProyecto = async (proyectoId) => {
   }
 };
 
-// --- MÉTODO PARA CARGAR COSTOS / GASTOS ---
 const cargarGastosDelProyecto = async (proyectoId) => {
   if (!proyectoId) return;
   cargandoGastos.value = true;
@@ -400,7 +455,7 @@ watch(() => props.proyectos, (nuevosProyectos) => {
       proyectoSeleccionado.value = proyectosLocales.value[0];
       cargarAsignaciones(proyectoSeleccionado.value.id);
       cargarTareasDelProyecto(proyectoSeleccionado.value.id);
-      cargarGastosDelProyecto(proyectoSeleccionado.value.id); // Llama los gastos al cargar
+      cargarGastosDelProyecto(proyectoSeleccionado.value.id);
     } else {
       const tareasActuales = proyectoSeleccionado.value.tareas || [];
       proyectoSeleccionado.value = mapeado;
@@ -410,17 +465,53 @@ watch(() => props.proyectos, (nuevosProyectos) => {
 }, { immediate: true, deep: true });
 
 // ==========================================
-// COMPUTED / KPIS
+// COMPUTED / KPIS GENERALES
 // ==========================================
 const totalAtrasados = computed(() => proyectosLocales.value.filter(p => esAtrasado(p.fechaFin)).length);
 const totalTareasCompletadas = computed(() => {
-  return proyectosLocales.value.reduce((acc, p) => acc + (p.tareas ? p.tareas.filter(t => t.estado === 'Listo' || t.estado === 'Finalizada').length : 0), 0);
+  return proyectosLocales.value.reduce((acc, p) => acc + (p.tareas ? p.tareas.filter(t => t.estado === 'Finalizado').length : 0), 0);
 });
 const totalCostos = computed(() => proyectosLocales.value.reduce((acc, p) => acc + (p.costo || 0), 0));
 
-// --- CALCULA EL TOTAL GENERADO EN GASTOS REALES ---
 const costoTotalGastos = computed(() => {
   return gastosProyecto.value.reduce((acc, gasto) => acc + (gasto.monto || 0), 0);
+});
+
+const esFinalizado = (proy) => {
+  const nombre = (proy?.estado?.nombre || proy?.estado || '').toString().toLowerCase();
+  return nombre === 'finalizado';
+};
+
+const diasTranscurridosProyecto = computed(() => {
+  if (!proyectoSeleccionado.value?.fechaInicio) return 0;
+  const inicio = new Date(proyectoSeleccionado.value.fechaInicio);
+  const fin = (esFinalizado(proyectoSeleccionado.value) && proyectoSeleccionado.value.fechaFin)
+    ? new Date(proyectoSeleccionado.value.fechaFin)
+    : new Date();
+  const diffMs = fin - inicio;
+  return Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+});
+
+const horasEstimadasProyecto = computed(() => diasTranscurridosProyecto.value * 8);
+
+const valorHoraPromedioEquipo = computed(() => {
+  const valores = asignacionesActuales.value
+    .map(a => a.empleado?.valorHora || 0)
+    .filter(v => v > 0);
+  if (!valores.length) return 0;
+  return valores.reduce((acc, v) => acc + v, 0) / valores.length;
+});
+
+const costoManoObraEstimado = computed(() => Math.round(horasEstimadasProyecto.value * valorHoraPromedioEquipo.value));
+
+const gastosHerramientas = computed(() => gastosProyecto.value.filter(g => g.tipo === 'Herramienta'));
+const gastosManoObra = computed(() => gastosProyecto.value.filter(g => g.tipo === 'Mano de Obra'));
+const totalHerramientas = computed(() => gastosHerramientas.value.reduce((acc, g) => acc + (g.monto || 0), 0));
+const totalManoObra = computed(() => gastosManoObra.value.reduce((acc, g) => acc + (g.monto || 0), 0));
+
+const diferenciaPresupuesto = computed(() => {
+  const presupuesto = proyectoSeleccionado.value?.costo || 0;
+  return presupuesto - costoTotalGastos.value;
 });
 
 // ==========================================
@@ -463,7 +554,7 @@ const seleccionarProyecto = (proyecto) => {
   proyectoSeleccionado.value = proyecto;
   cargarAsignaciones(proyecto.id);
   cargarTareasDelProyecto(proyecto.id);
-  cargarGastosDelProyecto(proyecto.id); // Refresca los gastos al cambiar de proyecto
+  cargarGastosDelProyecto(proyecto.id);
 };
 
 // ==========================================
@@ -537,7 +628,6 @@ const agregarTarea = async () => {
   }
 };
 
-
 const actualizarEstadoTarea = async (tarea) => {
   try {
     const payload = {
@@ -548,7 +638,7 @@ const actualizarEstadoTarea = async (tarea) => {
       fechaInicio: tarea.fechaInicio,
       fechaLimite: tarea.fechaLimite
     };
-    await api.actualizarTarea(tarea.id, payload); 
+    await api.actualizarTarea(tarea.id, payload);
     registrarLog(proyectoSeleccionado.value, `Cambió estado de tarea "${tarea.nombre}" a: ${tarea.estado}`);
   } catch (error) {
     alert('Error al persistir estado.');

@@ -172,7 +172,7 @@
 
 <script>
 import { useAuth0 } from 'libreria_vue_auth';
-import { computed } from 'vue'; // 🔥 Importamos computed de Vue para mantener la reactividad del rol
+import { computed } from 'vue'; 
 import api from './services/api';
 import ProyectoForm from './components/ProyectoForm.vue';
 import EmpleadoForm from './components/EmpleadoForm.vue';
@@ -291,8 +291,12 @@ export default {
         console.error('Error al cargar datos en App.vue:', error);
       }
     },
+    // En App.vue → methods
     abrirModal(tipo) {
       this.modalActivo = tipo;
+    },
+    cerrarModal() {       
+      this.modalActivo = null;
     },
     cerrarSesionApp() {
       this.proyectos = [];
