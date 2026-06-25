@@ -57,14 +57,17 @@
               <h4>Tus tareas vinculadas:</h4>
               <ul class="lista-tareas">
                 <li v-for="tarea in p.misTareas" :key="tarea.id" class="tarea-item">
-                  <span>📌 {{ tarea.nombre }} — <small class="task-status">{{ tarea.estado }}</small></span>
-                  <button
-                    v-if="!['Listo', 'Finalizada', 'Finalizado'].includes(tarea.estado)"
-                    @click="finalizarTarea(p.id, tarea)"
-                    class="btn-small btn-success"
+                  <span>📌 {{ tarea.nombre }}</span>
+                  <select
+                    v-model="tarea.estado"
+                    class="status-select-badge"
+                    :class="obtenerClaseEstado(tarea.estado)"
+                    @change="cambiarEstadoTarea(tarea)"
                   >
-                    ✓ Finalizar Tarea
-                  </button>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="En Ejecución">En Ejecución</option>
+                    <option value="Finalizado">Finalizado</option>
+                  </select>
                 </li>
               </ul>
             </div>
@@ -162,11 +165,11 @@ export default {
 
       try {
         const res = await api.getEmpleados();
-        const empleados = res.data.error ? [] : res.data;
+        const empleados = res?.data?.error ? [] : (res?.data || res || []);
         
         const encontrado = empleados.find(e =>
-          (e.email && e.email.toLowerCase() === this.user.email?.toLowerCase()) ||
-          (e.nombre && e.nombre.toLowerCase() === this.user.name?.toLowerCase())
+          (e.email && e.email.toLowerCase() === this.user?.email?.toLowerCase()) ||
+          (e.nombre && e.nombre.toLowerCase() === this.user?.name?.toLowerCase())
         );
 
         if (!encontrado) {
@@ -177,7 +180,7 @@ export default {
         this.empleadoActivo = encontrado;
         await this.cargarProyectos();
       } catch (e) {
-        console.error(e);
+        console.error("Error al vincular empleado:", e);
         this.errorBusqueda = 'Error de comunicación con el servicio de recursos.';
       } finally {
         this.cargandoPortal = false;
@@ -186,11 +189,10 @@ export default {
     async cargarProyectos() {
       try {
         const res = await api.getProyectosPorEmpleado(this.empleadoActivo.id);
-        const proyectosRaw = res.data.error ? [] : res.data;
+        const proyectosRaw = res?.data?.error ? [] : (res?.data || res || []);
         
         const nuevosReportes = { ...this.reportes };
         
-        // Mapeamos y pre-construimos los datos para evitar sobrecarga reactiva
         this.misProyectos = proyectosRaw.map(p => {
           if (!nuevosReportes[p.id]) {
             nuevosReportes[p.id] = {
@@ -201,7 +203,6 @@ export default {
             };
           }
 
-          // Pre-filtrado de tareas del trabajador actual
           const tareasFiltradas = p.tareas ? p.tareas.filter(tarea => {
             const idEncargado = tarea.empleadoId || (tarea.empleado && tarea.empleado.id) || tarea.trabajadorId;
             return Number(idEncargado) === Number(this.empleadoActivo.id);
@@ -215,7 +216,7 @@ export default {
 
         this.reportes = nuevosReportes;
       } catch (e) {
-        console.error('Error cargando proyectos:', e);
+        console.error('Error cargando proyectos del empleado:', e);
       }
     },
     async agregarHerramienta(proyectoId) {
@@ -242,7 +243,6 @@ export default {
 
         if (response.ok) {
           const dataGasto = await response.json().catch(() => ({}));
-          // Guardamos el id asignado por la base de datos para poder gestionarlo después
           r.herramientas.push({ id: dataGasto.id || null, nombre, costo });
           alert("¡Herramienta registrada exitosamente en los costos del proyecto!");
         } else {
@@ -260,7 +260,6 @@ export default {
       const r = this.reportes[proyectoId];
       const herramienta = r.herramientas[index];
 
-      // Sincronización: Si tiene id de base de datos, lo borramos del servidor
       if (herramienta.id) {
         if (!confirm(`¿Seguro que deseas eliminar esta herramienta? Se borrará permanentemente de la base de datos de gastos.`)) {
           return;
@@ -279,19 +278,30 @@ export default {
       
       r.herramientas.splice(index, 1);
     },
-    async finalizarTarea(proyectoId, tarea) {
-      if(confirm(`¿Seguro que deseas marcar como LISTA la tarea: ${tarea.nombre}?`)) {
-        try {
-          const tareaActualizada = { ...tarea, estado: 'Listo' };
-          await api.actualizarTarea(tarea.id, tareaActualizada);
-          tarea.estado = 'Listo';
-          alert('Tarea finalizada y sincronizada con el administrador.');
-        } catch (e) {
-          console.error(e);
-          alert('Error al sincronizar la tarea con el servidor.');
-        }
+
+    async cambiarEstadoTarea(tarea) {
+      try {
+        const payload = {
+          id: tarea.id,
+          nombre: tarea.nombre,
+          estado: tarea.estado,
+          empleadoId: tarea.empleadoId,
+          fechaInicio: tarea.fechaInicio,
+          fechaLimite: tarea.fechaLimite
+        };
+        await api.actualizarTarea(tarea.id, payload);
+      } catch (e) {
+        console.error(e);
+        alert('Error al sincronizar la tarea con el servidor.');
       }
     },
+
+    obtenerClaseEstado(estado) {
+      if (estado === 'Finalizado') return 'badge-success';
+      if (estado === 'En Ejecución') return 'badge-warning';
+      return 'badge-pending';
+    },
+
     async actualizarEstado(proyecto, estadoId) {
       try {
         const reporteProyecto = this.reportes[proyecto.id];

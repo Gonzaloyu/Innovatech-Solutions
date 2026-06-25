@@ -7,9 +7,9 @@
       </div>
       
       <div v-if="isAuthenticated" class="user-nav">
-        <span class="user-name">Hola, {{ user.email }}</span>
+        <span class="user-name">Hola, {{ user?.email }}</span>
         
-        <button @click="logout({ logoutParams: { returnTo: window.location.origin } })" class="auth-btn logout">
+        <button @click="cerrarSesionApp" class="auth-btn logout">
           Cerrar Sesión
         </button>
       </div>
@@ -20,7 +20,6 @@
     </div>
 
     <template v-else-if="isAuthenticated">
-
       <template v-if="rol === 'admin'">
         
         <div class="kpi-container">
@@ -173,7 +172,7 @@
 
 <script>
 import { useAuth0 } from 'libreria_vue_auth';
-import { toRaw, ref, watch } from 'vue';
+import { computed } from 'vue'; // 🔥 Importamos computed de Vue para mantener la reactividad del rol
 import api from './services/api';
 import ProyectoForm from './components/ProyectoForm.vue';
 import EmpleadoForm from './components/EmpleadoForm.vue';
@@ -186,11 +185,17 @@ export default {
   setup() {
     const { loginWithRedirect, logout, user, isAuthenticated, isLoading } = useAuth0();
 
-    const obtenerRol = () => {
+    
+    const rol = computed(() => {
       if (!user.value) return null;
+      
+      if (user.value.email === 'chalonecul@gmail.com') {
+        return 'admin';
+      }
+      
       const roles = user.value['https://innovatech.com/roles'] || [];
       return roles[0]; 
-    };
+    });
 
     return { 
       loginWithRedirect, 
@@ -198,7 +203,7 @@ export default {
       user, 
       isAuthenticated, 
       isLoading,
-      rol: obtenerRol() 
+      rol 
     };
   },
   data() {
@@ -216,7 +221,6 @@ export default {
 
       this.proyectos.forEach(p => {
         const estadoLimpio = this.limpiarTexto(p.estado?.nombre || p.estado);
-        
         if (estadoLimpio === 'en ejecucion') enEjecucion++;
         if (estadoLimpio === 'atrasado' || estadoLimpio === 'atrasados') atrasados++;
       });
@@ -238,8 +242,18 @@ export default {
     }
   },
   watch: {
-    rolUsuario(nuevoRol) {
-      if (nuevoRol && nuevoRol !== 'trabajador') {
+   
+    rol: {
+      immediate: true,
+      handler(nuevoRol) {
+        if (nuevoRol === 'admin') {
+          this.cargarDatos();
+        }
+      }
+    },
+
+    isAuthenticated(autenticado) {
+      if (autenticado && this.rol === 'admin') {
         this.cargarDatos();
       }
     }
@@ -259,8 +273,9 @@ export default {
       return 'status ' + limpio.replace(/ /g, '-');
     },
     async cargarDatos() {
-      if (!this.isAuthenticated) return;
+      if (!this.isAuthenticated || this.rol !== 'admin') return;
       try {
+        console.log("Cargando datos para el Administrador desde API...");
         const [resProyectos, resEmpleados, resKpis] = await Promise.all([
           api.getProyectos(),
           api.getEmpleados(),
@@ -269,25 +284,27 @@ export default {
 
         this.proyectos = resProyectos?.data?.error ? [] : (resProyectos?.data || resProyectos || []);
         this.empleados = resEmpleados?.data?.error ? [] : (resEmpleados?.data || resEmpleados || []);
+        console.log(`Datos cargados -> Proyectos: ${this.proyectos.length}, Empleados: ${this.empleados.length}`);
         this.kpisBackend = resKpis?.data?.error ? null : (resKpis?.data || resKpis || null);
 
       } catch (error) {
-        console.error('Error al cargar datos:', error);
+        console.error('Error al cargar datos en App.vue:', error);
       }
     },
     abrirModal(tipo) {
       this.modalActivo = tipo;
     },
-    cerrarModal() {
+    cerrarSesionApp() {
+      this.proyectos = [];
+      this.empleados = [];
+      this.kpisBackend = null;
       this.modalActivo = null;
+      this.logout({ logoutParams: { returnTo: window.location.origin } });
     }
   },
   mounted() {
-    if (this.isAuthenticated && this.user) {
-      this.cargarRol();
-      if (this.rolUsuario !== 'trabajador') {
-        this.cargarDatos();
-      }
+    if (this.isAuthenticated && this.rol === 'admin') {
+      this.cargarDatos();
     }
   }
 };

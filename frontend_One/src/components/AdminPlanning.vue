@@ -132,6 +132,7 @@
                 required
                 class="input-task-name"
               />
+              
               <select v-model="nuevaTarea.empleadoId" class="select-ms" required :disabled="asignacionesActuales.length === 0">
                 <option value="" disabled selected>
                   {{ asignacionesActuales.length === 0 ? 'Sin equipo asignado aún' : 'Trabajador asignado...' }}
@@ -197,8 +198,8 @@
                         @change="actualizarEstadoTarea(tarea)"
                       >
                         <option value="Pendiente">Pendiente</option>
-                        <option value="Listo">Listo</option>
-                        <option value="Atrasado">Atrasado</option>
+                        <option value="En Ejecución">En Ejecución</option>
+                        <option value="Finalizado">Finalizado</option>
                       </select>
                     </td>
                     <td>
@@ -349,9 +350,9 @@ const cargarTareasDelProyecto = async (proyectoId) => {
   if (!proyectoId) return;
   cargandoTareas.value = true;
   try {
-    const respuesta = await axios.get(`http://localhost:3000/api/bff/tareas/proyecto/${proyectoId}`);
+    const respuesta = await api.getTareasConEmpleado(); // o crea un endpoint filtrado por proyecto si existe
     if (proyectoSeleccionado.value && proyectoSeleccionado.value.id === proyectoId) {
-      proyectoSeleccionado.value.tareas = respuesta.data || [];
+      proyectoSeleccionado.value.tareas = (respuesta.data || []).filter(t => t.proyecto?.id === proyectoId || t.proyectoId === proyectoId);
     }
   } catch (error) {
     console.error('Error al cargar tareas:', error);
@@ -446,9 +447,9 @@ const registrarLog = (proyecto, mensaje) => {
 };
 
 const obtenerClaseEstado = (estado) => {
-  if (estado === 'Listo' || estado === 'Finalizada') return 'badge-success';
-  if (estado === 'Atrasado') return 'badge-danger';
-  return 'badge-warning';
+  if (estado === 'Finalizado') return 'badge-success';
+  if (estado === 'En Ejecución') return 'badge-warning';
+  return 'badge-pending';
 };
 
 const nombreTrabajadorTarea = (tarea) => {
@@ -536,6 +537,7 @@ const agregarTarea = async () => {
   }
 };
 
+
 const actualizarEstadoTarea = async (tarea) => {
   try {
     const payload = {
@@ -546,7 +548,7 @@ const actualizarEstadoTarea = async (tarea) => {
       fechaInicio: tarea.fechaInicio,
       fechaLimite: tarea.fechaLimite
     };
-    await axios.put(`http://localhost:3000/api/bff/tareas/${tarea.id}`, payload);
+    await api.actualizarTarea(tarea.id, payload); 
     registrarLog(proyectoSeleccionado.value, `Cambió estado de tarea "${tarea.nombre}" a: ${tarea.estado}`);
   } catch (error) {
     alert('Error al persistir estado.');
