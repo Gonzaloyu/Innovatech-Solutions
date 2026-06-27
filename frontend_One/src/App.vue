@@ -98,6 +98,7 @@
                     <th>Estado</th>
                     <th>Categoría</th>
                     <th>Cliente</th>
+                    <th>Equipo</th>
                     <th>Fecha Inicio</th>
                     <th>Fecha Fin</th>
                   </tr>
@@ -112,6 +113,10 @@
                     </td>
                     <td>{{ p.categoria?.nombre }}</td>
                     <td>{{ p.cliente?.nombreEmpresa }}</td>
+                    <td>
+                      <span v-if="p.nombreEquipo" class="ms-badge">👥 {{ p.nombreEquipo }}</span>
+                      <span v-else style="color:#94a3b8; font-style:italic;">Sin equipo</span>
+                    </td>
                     <td>{{ p.fechaInicio }}</td>
                     <td>{{ p.fechaFin }}</td>
                   </tr>
@@ -216,28 +221,46 @@ export default {
   },
   computed: {
     kpisCalculados() {
-      let enEjecucion = 0;
-      let atrasados = 0;
+    let enEjecucion = 0;
+    let atrasados   = 0;
+    let totalAsignaciones = 0;
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
 
-      this.proyectos.forEach(p => {
-        const estadoLimpio = this.limpiarTexto(p.estado?.nombre || p.estado);
-        if (estadoLimpio === 'en ejecucion') enEjecucion++;
-        if (estadoLimpio === 'atrasado' || estadoLimpio === 'atrasados') atrasados++;
-      });
+    this.proyectos.forEach(p => {
+      // Estado puede ser objeto {id, nombre} o string
+      const estadoNombre = this.limpiarTexto(
+        p.estado?.nombre || p.estado || ''
+      );
 
-      return {
-        totalProyectos: this.proyectos.length,
-        proyectosEnEjecucion: enEjecucion,
-        proyectosAtrasados: atrasados,
-        totalEmpleados: this.empleados.length,
-        totalAsignaciones: this.kpisBackend?.totalAsignaciones || 0
-      };
-    },
+      if (estadoNombre === 'en ejecucion') enEjecucion++;
+
+      // Atrasado = fecha fin pasada Y no finalizado
+      const fechaFin = p.fechaFin ? new Date(p.fechaFin) : null;
+      if (fechaFin && fechaFin < hoy && estadoNombre !== 'finalizado') {
+        atrasados++;
+      }
+
+      // Sumar asignaciones de cada proyecto
+      if (Array.isArray(p.asignaciones)) {
+        totalAsignaciones += p.asignaciones.length;
+      }
+    });
+
+    return {
+      totalProyectos:        this.proyectos.length,
+      proyectosEnEjecucion:  enEjecucion,
+      proyectosAtrasados:    atrasados,
+      totalEmpleados:        this.empleados.length,
+      totalAsignaciones:     this.kpisBackend?.totalAsignaciones || totalAsignaciones
+    };
+  },
     proyectosParaPlanning() {
       return this.proyectos.map(p => ({
         ...p,
         estado: p.estado && typeof p.estado === 'object' ? p.estado.nombre : (p.estado || 'En Planificación'),
-        responsable: p.responsable || 'Sin asignar'
+        responsable: p.responsable || 'Sin asignar',
+        nombreEquipo: p.nombreEquipo || ''  // ← AGREGAR
       }));
     }
   },

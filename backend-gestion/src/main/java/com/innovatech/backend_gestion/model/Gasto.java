@@ -13,10 +13,9 @@ public class Gasto {
 
     private String descripcion;
     private Double monto;
-    private String tipo; // "Herramienta" o "Mano de Obra"
+    private String tipo; 
     private LocalDate fechaRegistro;
 
-    // Relación con el proyecto
     @ManyToOne
     @JoinColumn(name = "proyecto_id", nullable = false)
     private Proyecto proyecto;
@@ -26,7 +25,6 @@ public class Gasto {
 
     public Gasto() {}
 
-    // --- GETTERS Y SETTERS ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

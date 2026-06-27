@@ -38,7 +38,6 @@ public class AsignacionController {
         return ResponseEntity.ok(asignacionService.obtenerPorProyecto(id));
     }
 
-    // Recibe el reporte del empleado y actualiza las métricas financieras
     @PutMapping("/{id}/reportar")
     public ResponseEntity<Asignacion> reportarProgreso(
             @PathVariable Long id,

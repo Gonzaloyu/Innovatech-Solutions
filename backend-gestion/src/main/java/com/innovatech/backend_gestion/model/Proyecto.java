@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDate;
+import java.util.List; 
 import java.util.Set;
 
 @Entity
@@ -27,6 +28,10 @@ public class Proyecto {
 
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
+    
+    @Column(name = "nombre_equipo")
+    private String nombreEquipo;
+
 
     @ManyToOne
     @JoinColumn(name = "cliente_id", nullable = false)
@@ -43,9 +48,6 @@ public class Proyecto {
     @Column(name = "empleado_id")
     private Long empleadoId;
 
-    // --- ¡NUEVO: RELACIONES AGREGADAS! ---
-    // Con esto el frontend dejará de mostrar "Sin asignar" y recibirá el equipo y tareas.
-
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "proyecto_id", insertable = false, updatable = false)
     @JsonIgnoreProperties("proyecto")
@@ -55,4 +57,10 @@ public class Proyecto {
     @JoinColumn(name = "proyecto_id", insertable = false, updatable = false)
     @JsonIgnoreProperties("proyecto")
     private Set<Tarea> tareas;
+    
+    // historial
+    @OneToMany(mappedBy = "proyecto", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonIgnoreProperties("proyecto")
+    @OrderBy("id DESC")
+    private List<ProyectoLog> logs;
 }

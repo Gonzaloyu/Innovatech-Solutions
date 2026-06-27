@@ -25,7 +25,6 @@ const saveProyecto                   = (data)        => axios.post(`${GESTION_UR
 const fetchProyectosPorEmpleado      = (empleadoId)  => axios.get(`${GESTION_URL}/proyectos/empleado/${empleadoId}`).then(r => r.data);
 const patchProyectoEstado            = ({ id, body }) => axios.patch(`${GESTION_URL}/proyectos/${id}/estado`, body).then(r => r.data);
 
-// --- Tareas (Modificadas y Nuevas) ---
 const fetchTareas                    = ()            => axios.get(`${GESTION_URL}/tareas`).then(r => r.data);
 const fetchTareaPorId                = (id)          => axios.get(`${GESTION_URL}/tareas/${id}`).then(r => r.data);
 const fetchTareasPorProyecto         = (proyectoId)  => axios.get(`${GESTION_URL}/tareas/proyecto/${proyectoId}`).then(r => r.data);
@@ -46,11 +45,18 @@ const fetchEmpPorDepto               = ()            => axios.get(`${REPORTES_UR
 const fetchProjPorEstado             = ()            => axios.get(`${REPORTES_URL}/reportes/proyectos-por-estado`).then(r => r.data);
 const fetchProjPorCat                = ()            => axios.get(`${REPORTES_URL}/reportes/proyectos-por-categoria`).then(r => r.data);
 
+// =================NOMBRE DE EQUIPO ==================
+const putProyecto = ({ id, data }) => axios.put(`${GESTION_URL}/proyectos/${id}`, data).then(r => r.data);
+const fetchLogs   = (proyectoId)   => axios.get(`${GESTION_URL}/proyectos/${proyectoId}/logs`).then(r => r.data);
+const saveLog     = ({ id, data }) => axios.post(`${GESTION_URL}/proyectos/${id}/logs`, data).then(r => r.data);
 // ==================== CIRCUIT BREAKERS ====================
 const proyectosGetBreaker              = new CircuitBreaker(fetchProyectos,                breakerOptions);
 const proyectosPostBreaker             = new CircuitBreaker(saveProyecto,                  breakerOptions);
 const proyectosPorEmpleadoBreaker      = new CircuitBreaker(fetchProyectosPorEmpleado,     breakerOptions);
 const proyectoPatchEstadoBreaker       = new CircuitBreaker(patchProyectoEstado,           breakerOptions);
+const proyectoPutBreaker               = new CircuitBreaker(putProyecto, breakerOptions);
+const logsGetBreaker                   = new CircuitBreaker(fetchLogs,   breakerOptions);
+const logsPostBreaker                  = new CircuitBreaker(saveLog,     breakerOptions);
 
 // --- Breakers de Tareas ---
 const tareasGetBreaker                 = new CircuitBreaker(fetchTareas,                   breakerOptions);
@@ -76,6 +82,7 @@ const projPorCatBreaker                = new CircuitBreaker(fetchProjPorCat,    
 // ==================== FALLBACKS ====================
 const fallback = (msg) => ({ error: msg });
 
+
 proyectosGetBreaker.fallback(()            => fallback('Servicio de Proyectos no disponible'));
 proyectosPostBreaker.fallback(()           => fallback('No se pudo guardar el Proyecto'));
 proyectosPorEmpleadoBreaker.fallback(()    => []);
@@ -95,6 +102,10 @@ empleadoPorIdBreaker.fallback(()           => null);
 asignacionesGetBreaker.fallback(()         => []);
 asignacionPostBreaker.fallback((data)      => ({ ...data, error: 'Circuit Breaker: No se pudo procesar la asignación.' }));
 asignacionDeleteBreaker.fallback(()        => fallback('No se pudo eliminar la Asignación'));
+
+proyectoPutBreaker.fallback(() => fallback('No se pudo actualizar el Proyecto'));
+logsGetBreaker.fallback(()     => []);
+logsPostBreaker.fallback(()    => fallback('No se pudo guardar el log'));
 
 kpisBreaker.fallback(() => ({
   totalProyectos: 0, totalEmpleados: 0,
@@ -135,6 +146,10 @@ logCircuit('emp-por-depto-GET',          empPorDeptoBreaker);
 logCircuit('proj-por-estado-GET',        projPorEstadoBreaker);
 logCircuit('proj-por-cat-GET',           projPorCatBreaker);
 
+logCircuit('proyectos-PUT', proyectoPutBreaker);
+logCircuit('logs-GET',      logsGetBreaker);
+logCircuit('logs-POST',     logsPostBreaker);
+
 // ==================== HEALTH CHECK ====================
 app.get('/health', (req, res) => {
   res.json({
@@ -147,6 +162,9 @@ app.get('/health', (req, res) => {
       empleadosGet:          empleadosGetBreaker.opened          ? 'OPEN' : 'CLOSED',
       asignacionesGet:       asignacionesGetBreaker.opened       ? 'OPEN' : 'CLOSED',
       kpisGet:               kpisBreaker.opened                  ? 'OPEN' : 'CLOSED',
+      proyectosPut:          proyectoPutBreaker.opened           ? 'OPEN' : 'CLOSED',
+      logsGet:               logsGetBreaker.opened               ? 'OPEN' : 'CLOSED',
+      logsPost:              logsPostBreaker.opened              ? 'OPEN' : 'CLOSED',
     }
   });
 });
@@ -464,7 +482,37 @@ app.get('/api/bff/proyectos/empleado/:empleadoId', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener proyectos del empleado' });
   }
 });
+app.put('/api/bff/proyectos/:id', async (req, res) => {
+  try {
+    const data = await proyectoPutBreaker.fire({ id: req.params.id, data: req.body });
+    if (data && data.error) return res.status(503).json(data);
+    res.json(data);
+  } catch (error) {
+    console.error('BFF Error proyectos PUT:', error.message);
+    res.status(500).json({ error: 'Error al actualizar proyecto' });
+  }
+});
 
+app.get('/api/bff/proyectos/:id/logs', async (req, res) => {
+  try {
+    const data = await logsGetBreaker.fire(req.params.id);
+    res.json(data);
+  } catch (error) {
+    console.error('BFF Error logs GET:', error.message);
+    res.status(500).json({ error: 'Error al obtener historial' });
+  }
+});
+
+app.post('/api/bff/proyectos/:id/logs', async (req, res) => {
+  try {
+    const data = await logsPostBreaker.fire({ id: req.params.id, data: req.body });
+    if (data && data.error) return res.status(503).json(data);
+    res.status(201).json(data);
+  } catch (error) {
+    console.error('BFF Error logs POST:', error.message);
+    res.status(500).json({ error: 'Error al guardar log' });
+  }
+});
 // ==================== INICIO DEL SERVIDOR ====================
 app.listen(PORT, () => {
   console.log(`BFF escuchando en http://localhost:${PORT}`);

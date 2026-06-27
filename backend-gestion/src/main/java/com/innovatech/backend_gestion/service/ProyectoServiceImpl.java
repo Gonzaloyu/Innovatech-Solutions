@@ -2,6 +2,8 @@ package com.innovatech.backend_gestion.service;
 
 import com.innovatech.backend_gestion.model.EstadoProyecto;
 import com.innovatech.backend_gestion.model.Proyecto;
+import com.innovatech.backend_gestion.model.ProyectoLog;
+import com.innovatech.backend_gestion.repository.ProyectoLogRepository;
 import com.innovatech.backend_gestion.repository.ProyectoRepository;
 import com.innovatech.backend_gestion.service.KafkaProducerService; 
 import java.util.Map; 
@@ -67,4 +69,38 @@ public class ProyectoServiceImpl implements ProyectoService {
     
         return proyectoRepository.save(proyecto);
     }
+    @Autowired
+private ProyectoLogRepository proyectoLogRepository;
+
+@Override
+public Proyecto actualizarProyecto(Long id, Map<String, Object> body) {
+    Proyecto proyecto = proyectoRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Proyecto no encontrado"));
+
+    if (body.containsKey("nombreEquipo")) {
+        proyecto.setNombreEquipo(body.get("nombreEquipo").toString());
+    }
+    if (body.containsKey("nombre")) {
+        proyecto.setNombre(body.get("nombre").toString());
+    }
+    if (body.containsKey("descripcion")) {
+        proyecto.setDescripcion(body.get("descripcion").toString());
+    }
+
+    return proyectoRepository.save(proyecto);
+    }
+
+    @Override
+    public List<ProyectoLog> obtenerLogs(Long proyectoId) {
+        return proyectoLogRepository.findByProyectoIdOrderByIdDesc(proyectoId);
+    }
+
+    @Override
+    public ProyectoLog crearLog(Long proyectoId, ProyectoLog log) {
+        Proyecto proyecto = proyectoRepository.findById(proyectoId)
+                .orElseThrow(() -> new RuntimeException("Proyecto no encontrado"));
+        log.setProyecto(proyecto);
+        return proyectoLogRepository.save(log);
+    }
+    
 }

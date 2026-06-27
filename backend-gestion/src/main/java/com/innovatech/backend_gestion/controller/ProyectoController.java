@@ -1,6 +1,7 @@
 package com.innovatech.backend_gestion.controller;
 
 import com.innovatech.backend_gestion.model.Proyecto;
+import com.innovatech.backend_gestion.model.ProyectoLog;
 import com.innovatech.backend_gestion.service.ProyectoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -42,5 +43,21 @@ public class ProyectoController {
             @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
         return ResponseEntity.ok(proyectoService.actualizarEstado(id, body));
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<Proyecto> actualizarProyecto(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        return ResponseEntity.ok(proyectoService.actualizarProyecto(id, body));
+    }
+    @GetMapping("/{id}/logs")
+    public ResponseEntity<List<ProyectoLog>> obtenerLogs(@PathVariable Long id) {
+        return ResponseEntity.ok(proyectoService.obtenerLogs(id));
+    }
+    @PostMapping("/{id}/logs")
+    public ResponseEntity<ProyectoLog> crearLog(
+            @PathVariable Long id,
+            @RequestBody ProyectoLog log) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(proyectoService.crearLog(id, log));
     }
 }

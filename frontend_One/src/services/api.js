@@ -20,6 +20,11 @@ export default {
   getEmpleados()         { return apiClient.get('/empleados'); },
   createEmpleado(data)   { return apiClient.post('/empleados', data); },
 
+  getLogs(proyectoId) { 
+  return apiClient.get(`/proyectos/${proyectoId}/logs`); },
+  crearLog(proyectoId, data) { 
+    return apiClient.post(`/proyectos/${proyectoId}/logs`, data); },
+
   // ASIGNACIONES
   createAsignacion(data) { return apiClient.post('/asignaciones', data); },
   
@@ -41,12 +46,19 @@ export default {
   getProyectosPorEmpleado(empleadoId) { 
     return apiClient.get(`/proyectos/empleado/${empleadoId}`); 
   },
-
   actualizarEstadoProyecto(id, data) { 
     return apiClient.patch(`/proyectos/${id}/estado`, data); 
   },
-  
   getEmpleadoPorId(id) { 
     return apiClient.get(`/empleados/${id}`); 
+  },
+  actualizarProyecto(id, data) { 
+  return apiClient.put(`/proyectos/${id}`, data); 
+  },
+  getLogs(proyectoId) { 
+  return apiClient.get(`/proyectos/${proyectoId}/logs`); 
+  },
+  crearLog(proyectoId, data) { 
+    return apiClient.post(`/proyectos/${proyectoId}/logs`, data); 
   }
 };

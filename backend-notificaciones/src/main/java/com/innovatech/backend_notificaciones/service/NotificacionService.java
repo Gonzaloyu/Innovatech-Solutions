@@ -23,7 +23,7 @@ public class NotificacionService {
     public void escucharNuevoProyecto(String mensajeKafka) {
         System.out.println("[KAFKA] Mensaje recibido: " + mensajeKafka);
 
-        // 1. Guardar notificación
+        // Guardar notificación
         Notificacion notificacion = new Notificacion(
             "Correo enviado: " + mensajeKafka,
             "administracion@innovatech.cl"

@@ -118,7 +118,6 @@
                 Costo Total Calculado: ${{ p.costoTotalCalculado || 0 }}
               </p>
             </div>
-
           </div>
         </div>
       </div>
@@ -244,6 +243,12 @@ export default {
         if (response.ok) {
           const dataGasto = await response.json().catch(() => ({}));
           r.herramientas.push({ id: dataGasto.id || null, nombre, costo });
+
+          await this.registrarLogProyecto(
+            proyectoId,
+            `${this.empleadoActivo.nombre} agregó herramienta "${nombre}" (Costo: $${costo})`
+          );
+          
           alert("¡Herramienta registrada exitosamente en los costos del proyecto!");
         } else {
           alert("No se pudo guardar el costo en el servidor.");
@@ -275,7 +280,10 @@ export default {
           console.error("Error al conectar con la API de borrado de gastos:", error);
         }
       }
-      
+      await this.registrarLogProyecto(
+        proyectoId,
+        `${this.empleadoActivo.nombre} eliminó herramienta "${herramienta.nombre}"`
+      );
       r.herramientas.splice(index, 1);
     },
 
@@ -290,6 +298,16 @@ export default {
           fechaLimite: tarea.fechaLimite
         };
         await api.actualizarTarea(tarea.id, payload);
+
+        const proyecto = this.misProyectos.find(p =>
+          p.misTareas?.some(t => t.id === tarea.id)
+        );
+        if (proyecto) {
+          await this.registrarLogProyecto(
+            proyecto.id,
+            `${this.empleadoActivo.nombre} cambió estado de tarea "${tarea.nombre}" a: ${tarea.estado}`
+          );
+        }
       } catch (e) {
         console.error(e);
         alert('Error al sincronizar la tarea con el servidor.');
@@ -303,61 +321,90 @@ export default {
     },
 
     async actualizarEstado(proyecto, estadoId) {
-      try {
-        const reporteProyecto = this.reportes[proyecto.id];
-        const costoHerramientasTotales = reporteProyecto.herramientas.reduce((acc, curr) => acc + curr.costo, 0);
+    try {
+      const reporteProyecto = this.reportes[proyecto.id];
+      const costoHerramientasTotales = reporteProyecto.herramientas.reduce((acc, curr) => acc + curr.costo, 0);
 
-        const body = {
-          estadoId: estadoId,
-          empleadoCompletaId: this.empleadoActivo.id,
-          comentario: reporteProyecto.comentario,
-          herramientas: reporteProyecto.herramientas.map(h => ({ nombre: h.nombre, costo: h.costo })),
-          costoHerramientas: costoHerramientasTotales
-        };
+      const body = {
+        estadoId: estadoId,
+        empleadoCompletaId: this.empleadoActivo.id,
+        comentario: reporteProyecto.comentario,
+        herramientas: reporteProyecto.herramientas.map(h => ({ nombre: h.nombre, costo: h.costo })),
+        costoHerramientas: costoHerramientasTotales
+      };
 
-        if (estadoId === 3) {
-          body.fechaFin = new Date().toISOString().split('T')[0];
-          
-          const fechaInicio = new Date(proyecto.fechaInicio);
-          const fechaFin = new Date(body.fechaFin);
-          const diasDiferencia = Math.max(1, Math.round((fechaFin - fechaInicio) / (1000 * 60 * 60 * 24)));
-          
-          const horasDedicadasEstimadas = diasDiferencia * 8;
-          body.horasDedicadas = horasDedicadasEstimadas;
+      if (estadoId === 3) {
+        body.fechaFin = new Date().toISOString().split('T')[0];
 
-          const valorHoraEmpleado = this.empleadoActivo.valorHora || 0;
-          const costoManoObraCalculado = horasDedicadasEstimadas * valorHoraEmpleado;
+        const fechaInicio = new Date(proyecto.fechaInicio);
+        const fechaFin = new Date(body.fechaFin);
+        const diasDiferencia = Math.max(1, Math.round((fechaFin - fechaInicio) / (1000 * 60 * 60 * 24)));
 
-          try {
-            await fetch('http://localhost:8081/api/gastos', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                descripcion: `Mano de Obra - ${this.empleadoActivo.nombre} (${horasDedicadasEstimadas} hrs)`,
-                monto: costoManoObraCalculado,
-                tipo: 'Mano de Obra',
-                proyecto: { id: proyecto.id },
-                empleado: { id: this.empleadoActivo.id }
-              })
-            });
-          } catch (errGasto) {
-            console.error("No se pudo auto-registrar el costo de mano de obra:", errGasto);
-          }
+        const horasDedicadasEstimadas = diasDiferencia * 8;
+        body.horasDedicadas = horasDedicadasEstimadas;
+
+        const valorHoraEmpleado = this.empleadoActivo.valorHora || 0;
+        const costoManoObraCalculado = horasDedicadasEstimadas * valorHoraEmpleado;
+
+        try {
+          await fetch('http://localhost:8081/api/gastos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              descripcion: `Mano de Obra - ${this.empleadoActivo.nombre} (${horasDedicadasEstimadas} hrs)`,
+              monto: costoManoObraCalculado,
+              tipo: 'Mano de Obra',
+              proyecto: { id: proyecto.id },
+              empleado: { id: this.empleadoActivo.id }
+            })
+          });
+        } catch (errGasto) {
+          console.error("No se pudo auto-registrar el costo de mano de obra:", errGasto);
         }
-
-        await api.actualizarEstadoProyecto(proyecto.id, body);
-        
-        if (estadoId === 3) {
-          alert('Proyecto finalizado y analíticas registradas con éxito');
-        } else {
-          alert('Progreso guardado en ejecución con éxito');
-        }
-        
-        await this.cargarProyectos();
-      } catch (e) {
-        alert('Error al actualizar estado');
       }
+
+      await api.actualizarEstadoProyecto(proyecto.id, body);
+
+      if (reporteProyecto.comentario?.trim()) {
+        await this.registrarLogProyecto(
+          proyecto.id,
+          `${this.empleadoActivo.nombre} comentó: "${reporteProyecto.comentario.trim()}"`
+        );
+      }
+
+      if (estadoId === 3) {
+        await this.registrarLogProyecto(
+          proyecto.id,
+          `${this.empleadoActivo.nombre} finalizó el proyecto.`
+        );
+        alert('Proyecto finalizado y analíticas registradas con éxito');
+      } else {
+        await this.registrarLogProyecto(
+          proyecto.id,
+          `${this.empleadoActivo.nombre} guardó progreso del proyecto.`
+        );
+        alert('Progreso guardado en ejecución con éxito');
+      }
+
+      await this.cargarProyectos();
+
+    } catch (e) {
+      console.error('Error al actualizar estado:', e);
+      alert('Error al actualizar estado');
     }
+  },
+    
+    async registrarLogProyecto(proyectoId, mensaje) {
+      const ahora = new Date();
+      const hora = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+      const fecha = ahora.toISOString().split('T')[0];
+      try {
+        await api.crearLog(proyectoId, { hora, mensaje, fecha });
+      } catch (error) {
+        console.error('Error al registrar log:', error);
+      }
+    },
+    
   }
 };
 </script>

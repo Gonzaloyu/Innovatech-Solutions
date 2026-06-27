@@ -45,15 +45,15 @@ public class AsignacionServiceImpl implements AsignacionService {
         asignacion.setHerramientasUtilizadas(herramientas);
         asignacion.setCostoHerramientas(costoHerramientas);
 
-        // Si cambia el estado a Finalizado, realizamos los cálculos analíticos automáticos
+        // Si el proyecto se termina realizamos los cálculos analíticos automáticos
         if ("Finalizado".equalsIgnoreCase(estado)) {
             asignacion.setFechaFin(LocalDate.now()); 
 
             if (asignacion.getFechaInicio() != null) {
-                // 1. Calcular días transcurridos entre inicio y fin
+                // Calcular días transcurridos entre inicio y fin
                 long diasTranscurridos = ChronoUnit.DAYS.between(asignacion.getFechaInicio(), asignacion.getFechaFin());
                 if (diasTranscurridos <= 0) {
-                    diasTranscurridos = 1; // Mínimo un día de trabajo si se termina el mismo día
+                    diasTranscurridos = 1; 
                 }
 
                 // Convertir a horas estimadas (8 horas laborales por día)
@@ -71,7 +71,6 @@ public class AsignacionServiceImpl implements AsignacionService {
                 asignacion.setCostoTotalCalculado(costoTotal);
             }
         } else if ("En Ejecución".equalsIgnoreCase(estado) && asignacion.getFechaInicio() == null) {
-            // Si pasa a ejecución por primera vez, se captura la fecha de inicio actual
             asignacion.setFechaInicio(LocalDate.now());
         }
 

@@ -350,10 +350,6 @@
   margin-top: 10px;
 }
 
-/* src/assets/planning.css */
-
-/* ... Aquí van los estilos previos que ya tenías en este archivo ... */
-
 .status-select-badge {
   display: inline-block;
   min-width: 110px;
@@ -407,14 +403,11 @@
   color: #ffffff !important;
 }
 
-
 select, option {
-  color: #1e293b !important;       /* Texto oscuro */
-  background-color: #ffffff !important; /* Fondo blanco */
+  color: #1e293b !important;       
+  background-color: #ffffff !important; 
 }
 
-
-/* */
 .tareas-seccion {
   background: #f8fafc;
   padding: 10px;
@@ -562,4 +555,21 @@ select, option {
 .resumen-val {
   font-size: 1.15rem;
   font-weight: 700;
+}
+
+.equipo-nombre-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+.equipo-nombre-lbl {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
 }

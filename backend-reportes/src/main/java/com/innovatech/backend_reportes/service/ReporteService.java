@@ -21,7 +21,7 @@ public class ReporteService {
     @Value("${backend.analitico.url}")
     private String analiticoUrl;
 
-    // Obtener todos los proyectos
+    // Obtenemos todos los proyectos
     public List<ProyectoDTO> getProyectos() {
         ProyectoDTO[] proyectos = restTemplate.getForObject(
             gestionUrl + "/proyectos", ProyectoDTO[].class
@@ -29,7 +29,7 @@ public class ReporteService {
         return proyectos != null ? Arrays.asList(proyectos) : new ArrayList<>();
     }
 
-    // Obtener todos los empleados
+    // Obtenemos todos los empleados
     public List<EmpleadoDTO> getEmpleados() {
         EmpleadoDTO[] empleados = restTemplate.getForObject(
             analiticoUrl + "/empleados", EmpleadoDTO[].class
@@ -37,7 +37,7 @@ public class ReporteService {
         return empleados != null ? Arrays.asList(empleados) : new ArrayList<>();
     }
 
-    // Obtener todas las asignaciones
+    // Obtenemos todas las asignaciones
     public List<AsignacionDTO> getAsignaciones() {
         AsignacionDTO[] asignaciones = restTemplate.getForObject(
             analiticoUrl + "/asignaciones", AsignacionDTO[].class
@@ -45,7 +45,7 @@ public class ReporteService {
         return asignaciones != null ? Arrays.asList(asignaciones) : new ArrayList<>();
     }
 
-    // KPI: Resumen general
+    // Resumen general de los KPI
     public Map<String, Object> getResumenKpis() {
         List<ProyectoDTO> proyectos = getProyectos();
         List<EmpleadoDTO> empleados = getEmpleados();
@@ -72,7 +72,7 @@ public class ReporteService {
         return kpis;
     }
 
-    // KPI: Empleados por departamento
+    // KPI Empleados por departamento
     public Map<String, Long> getEmpleadosPorDepartamento() {
         return getEmpleados().stream()
             .filter(e -> e.getDepartamento() != null)
@@ -82,7 +82,7 @@ public class ReporteService {
             ));
     }
 
-    // KPI: Proyectos por estado
+    // KPI Proyectos por estado
     public Map<String, Long> getProyectosPorEstado() {
         return getProyectos().stream()
             .filter(p -> p.getEstado() != null)
@@ -92,7 +92,7 @@ public class ReporteService {
             ));
     }
 
-    // KPI: Proyectos por categoría
+    // KPI Proyectos por categoría
     public Map<String, Long> getProyectosPorCategoria() {
         return getProyectos().stream()
             .filter(p -> p.getCategoria() != null)
@@ -102,7 +102,7 @@ public class ReporteService {
             ));
     }
 
-    // KPI: Horas asignadas por proyecto
+    // KPI Horas asignadas por proyecto
     public Map<Long, Integer> getHorasPorProyecto() {
         return getAsignaciones().stream()
             .collect(Collectors.groupingBy(
