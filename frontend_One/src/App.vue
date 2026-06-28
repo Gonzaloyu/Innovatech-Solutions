@@ -9,6 +9,15 @@
       <div v-if="isAuthenticated" class="user-nav">
         <span class="user-name">Hola, {{ user?.email }}</span>
         
+        <button 
+          v-if="rol === 'admin'" 
+          @click="mostrarPlanning = !mostrarPlanning" 
+          class="auth-btn"
+          style="margin-right: 10px; cursor: pointer;"
+        >
+          {{ mostrarPlanning ? 'Volver al Inicio' : 'Planificación' }}
+        </button>
+
         <button @click="cerrarSesionApp" class="auth-btn logout">
           Cerrar Sesión
         </button>
@@ -22,55 +31,59 @@
     <template v-else-if="isAuthenticated">
       <template v-if="rol === 'admin'">
         
-        <div class="kpi-container">
-          <div class="kpi-card green">
-            <p class="kpi-numero">{{ kpisCalculados.totalProyectos }}</p>
-            <p class="kpi-label">Total Proyectos</p>
+        <div v-if="!mostrarPlanning">
+          <div class="kpi-container">
+            <div class="kpi-card green">
+              <p class="kpi-numero">{{ kpisCalculados.totalProyectos }}</p>
+              <p class="kpi-label">Total Proyectos</p>
+            </div>
+            <div class="kpi-card blue">
+              <p class="kpi-numero">{{ kpisCalculados.proyectosEnEjecucion }}</p>
+              <p class="kpi-label">En Ejecución</p>
+            </div>
+            <div class="kpi-card red">
+              <p class="kpi-numero">{{ kpisCalculados.proyectosAtrasados }}</p>
+              <p class="kpi-label">Atrasados</p>
+            </div>
+            <div class="kpi-card purple">
+              <p class="kpi-numero">{{ kpisCalculados.totalEmpleados }}</p>
+              <p class="kpi-label">Empleados</p>
+            </div>
+            <div class="kpi-card orange">
+              <p class="kpi-numero">{{ kpisCalculados.totalAsignaciones }}</p>
+              <p class="kpi-label">Asignaciones</p>
+            </div>
           </div>
-          <div class="kpi-card blue">
-            <p class="kpi-numero">{{ kpisCalculados.proyectosEnEjecucion }}</p>
-            <p class="kpi-label">En Ejecución</p>
-          </div>
-          <div class="kpi-card red">
-            <p class="kpi-numero">{{ kpisCalculados.proyectosAtrasados }}</p>
-            <p class="kpi-label">Atrasados</p>
-          </div>
-          <div class="kpi-card purple">
-            <p class="kpi-numero">{{ kpisCalculados.totalEmpleados }}</p>
-            <p class="kpi-label">Empleados</p>
-          </div>
-          <div class="kpi-card orange">
-            <p class="kpi-numero">{{ kpisCalculados.totalAsignaciones }}</p>
-            <p class="kpi-label">Asignaciones</p>
+
+          <div class="page-container">
+            <div class="forms-row">
+              <div class="module">
+                <div class="module-header">
+                  <h2>Gestión de Proyectos</h2>
+                  <span class="badge mysql">MySQL</span>
+                </div>
+                <ProyectoForm @proyecto-creado="cargarDatos" />
+                <button class="btn-ver" @click="abrirModal('proyectos')">
+                  Ver Proyectos ({{ proyectos.length }})
+                </button>
+              </div>
+
+              <div class="module">
+                <div class="module-header">
+                  <h2>Gestión de Recursos</h2>
+                  <span class="badge postgres">PostgreSQL</span>
+                </div>
+                <EmpleadoForm @empleado-creado="cargarDatos" />
+                <button class="btn-ver" @click="abrirModal('empleados')">
+                  Ver Empleados ({{ empleados.length }})
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="page-container">
-          <div class="forms-row">
-            <div class="module">
-              <div class="module-header">
-                <h2>Gestión de Proyectos</h2>
-                <span class="badge mysql">MySQL</span>
-              </div>
-              <ProyectoForm @proyecto-creado="cargarDatos" />
-              <button class="btn-ver" @click="abrirModal('proyectos')">
-                Ver Proyectos ({{ proyectos.length }})
-              </button>
-            </div>
-
-            <div class="module">
-              <div class="module-header">
-                <h2>Gestión de Recursos</h2>
-                <span class="badge postgres">PostgreSQL</span>
-              </div>
-              <EmpleadoForm @empleado-creado="cargarDatos" />
-              <button class="btn-ver" @click="abrirModal('empleados')">
-                Ver Empleados ({{ empleados.length }})
-              </button>
-            </div>
-          </div>
-
-          <div class="module" style="margin-top: 30px;">
+        <div v-else class="page-container" style="margin-top: 30px;">
+          <div class="module">
             <AdminPlanning 
               :proyectos="proyectosParaPlanning"
               :empleados="empleados"
@@ -79,78 +92,6 @@
           </div>
         </div>
 
-        <div v-if="modalActivo" class="modal-overlay" @click.self="cerrarModal">
-          <div class="modal-box">
-            <div class="modal-header">
-              <h2 v-if="modalActivo === 'proyectos'">Proyectos Registrados</h2>
-              <h2 v-else>Empleados Registrados</h2>
-              <button class="modal-close" @click="cerrarModal">✕</button>
-            </div>
-
-            <div v-if="modalActivo === 'proyectos'">
-              <div v-if="proyectos.length === 0" class="empty-msg">
-                No hay proyectos registrados.
-              </div>
-              <table v-else class="data-table">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Estado</th>
-                    <th>Categoría</th>
-                    <th>Cliente</th>
-                    <th>Equipo</th>
-                    <th>Fecha Inicio</th>
-                    <th>Fecha Fin</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="p in proyectos" :key="p.id">
-                    <td><strong>{{ p.nombre }}</strong></td>
-                    <td>
-                      <span :class="claseEstado(p.estado?.nombre)">
-                        {{ p.estado?.nombre }}
-                      </span>
-                    </td>
-                    <td>{{ p.categoria?.nombre }}</td>
-                    <td>{{ p.cliente?.nombreEmpresa }}</td>
-                    <td>
-                      <span v-if="p.nombreEquipo" class="ms-badge">👥 {{ p.nombreEquipo }}</span>
-                      <span v-else style="color:#94a3b8; font-style:italic;">Sin equipo</span>
-                    </td>
-                    <td>{{ p.fechaInicio }}</td>
-                    <td>{{ p.fechaFin }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div v-if="modalActivo === 'empleados'">
-              <div v-if="empleados.length === 0" class="empty-msg">
-                No hay empleados registrados.
-              </div>
-              <table v-else class="data-table">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Cargo</th>
-                    <th>Nivel</th>
-                    <th>Departamento</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="e in empleados" :key="e.id">
-                    <td><strong>{{ e.nombre }}</strong></td>
-                    <td>{{ e.email }}</td>
-                    <td>{{ e.cargo?.nombre }}</td>
-                    <td>{{ e.cargo?.nivel }}</td>
-                    <td>{{ e.departamento?.nombre }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
       </template>
 
       <template v-else>
@@ -168,6 +109,79 @@
         </button>
       </div>
     </main>
+
+    <div v-if="modalActivo" class="modal-overlay" @click.self="cerrarModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h2 v-if="modalActivo === 'proyectos'">Proyectos Registrados</h2>
+          <h2 v-else>Empleados Registrados</h2>
+          <button class="modal-close" @click="cerrarModal">X</button>
+        </div>
+
+        <div v-if="modalActivo === 'proyectos'">
+          <div v-if="proyectos.length === 0" class="empty-msg">
+            No hay proyectos registrados.
+          </div>
+          <table v-else class="data-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Estado</th>
+                <th>Categoría</th>
+                <th>Cliente</th>
+                <th>Equipo</th>
+                <th>Fecha Inicio</th>
+                <th>Fecha Fin</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in proyectos" :key="p.id">
+                <td><strong>{{ p.nombre }}</strong></td>
+                <td>
+                  <span :class="claseEstado(p.estado?.nombre)">
+                    {{ p.estado?.nombre }}
+                  </span>
+                </td>
+                <td>{{ p.categoria?.nombre }}</td>
+                <td>{{ p.cliente?.nombreEmpresa }}</td>
+                <td>
+                  <span v-if="p.nombreEquipo" class="ms-badge">{{ p.nombreEquipo }}</span>
+                  <span v-else style="color:#94a3b8; font-style:italic;">Sin equipo</span>
+                </td>
+                <td>{{ p.fechaInicio }}</td>
+                <td>{{ p.fechaFin }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-if="modalActivo === 'empleados'">
+          <div v-if="empleados.length === 0" class="empty-msg">
+            No hay empleados registrados.
+          </div>
+          <table v-else class="data-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Cargo</th>
+                <th>Nivel</th>
+                <th>Departamento</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="e in empleados" :key="e.id">
+                <td><strong>{{ e.nombre }}</strong></td>
+                <td>{{ e.email }}</td>
+                <td>{{ e.cargo?.nombre }}</td>
+                <td>{{ e.cargo?.nivel }}</td>
+                <td>{{ e.departamento?.nombre }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
     <footer class="main-footer">
       <p>&copy; 2026 Innovatech Solutions — Arquitectura de Microservicios</p>
@@ -190,7 +204,6 @@ export default {
   setup() {
     const { loginWithRedirect, logout, user, isAuthenticated, isLoading } = useAuth0();
 
-    
     const rol = computed(() => {
       if (!user.value) return null;
       
@@ -216,56 +229,53 @@ export default {
       proyectos: [],
       empleados: [],
       kpisBackend: null,
-      modalActivo: null
+      modalActivo: null,
+      mostrarPlanning: false
     };
   },
   computed: {
     kpisCalculados() {
-    let enEjecucion = 0;
-    let atrasados   = 0;
-    let totalAsignaciones = 0;
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
+      let enEjecucion = 0;
+      let atrasados   = 0;
+      let totalAsignaciones = 0;
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
 
-    this.proyectos.forEach(p => {
-      // Estado puede ser objeto {id, nombre} o string
-      const estadoNombre = this.limpiarTexto(
-        p.estado?.nombre || p.estado || ''
-      );
+      this.proyectos.forEach(p => {
+        const estadoNombre = this.limpiarTexto(
+          p.estado?.nombre || p.estado || ''
+        );
 
-      if (estadoNombre === 'en ejecucion') enEjecucion++;
+        if (estadoNombre === 'en ejecucion') enEjecucion++;
 
-      // Atrasado = fecha fin pasada Y no finalizado
-      const fechaFin = p.fechaFin ? new Date(p.fechaFin) : null;
-      if (fechaFin && fechaFin < hoy && estadoNombre !== 'finalizado') {
-        atrasados++;
-      }
+        const fechaFin = p.fechaFin ? new Date(p.fechaFin) : null;
+        if (fechaFin && fechaFin < hoy && estadoNombre !== 'finalizado') {
+          atrasados++;
+        }
 
-      // Sumar asignaciones de cada proyecto
-      if (Array.isArray(p.asignaciones)) {
-        totalAsignaciones += p.asignaciones.length;
-      }
-    });
+        if (Array.isArray(p.asignaciones)) {
+          totalAsignaciones += p.asignaciones.length;
+        }
+      });
 
-    return {
-      totalProyectos:        this.proyectos.length,
-      proyectosEnEjecucion:  enEjecucion,
-      proyectosAtrasados:    atrasados,
-      totalEmpleados:        this.empleados.length,
-      totalAsignaciones:     this.kpisBackend?.totalAsignaciones || totalAsignaciones
-    };
-  },
+      return {
+        totalProyectos:        this.proyectos.length,
+        proyectosEnEjecucion:  enEjecucion,
+        proyectosAtrasados:    atrasados,
+        totalEmpleados:        this.empleados.length,
+        totalAsignaciones:     this.kpisBackend?.totalAsignaciones || totalAsignaciones
+      };
+    },
     proyectosParaPlanning() {
       return this.proyectos.map(p => ({
         ...p,
         estado: p.estado && typeof p.estado === 'object' ? p.estado.nombre : (p.estado || 'En Planificación'),
         responsable: p.responsable || 'Sin asignar',
-        nombreEquipo: p.nombreEquipo || ''  // ← AGREGAR
+        nombreEquipo: p.nombreEquipo || ''
       }));
     }
   },
   watch: {
-   
     rol: {
       immediate: true,
       handler(nuevoRol) {
@@ -274,7 +284,6 @@ export default {
         }
       }
     },
-
     isAuthenticated(autenticado) {
       if (autenticado && this.rol === 'admin') {
         this.cargarDatos();
@@ -307,14 +316,12 @@ export default {
 
         this.proyectos = resProyectos?.data?.error ? [] : (resProyectos?.data || resProyectos || []);
         this.empleados = resEmpleados?.data?.error ? [] : (resEmpleados?.data || resEmpleados || []);
-        console.log(`Datos cargados -> Proyectos: ${this.proyectos.length}, Empleados: ${this.empleados.length}`);
         this.kpisBackend = resKpis?.data?.error ? null : (resKpis?.data || resKpis || null);
 
       } catch (error) {
         console.error('Error al cargar datos en App.vue:', error);
       }
     },
-    // En App.vue → methods
     abrirModal(tipo) {
       this.modalActivo = tipo;
     },
@@ -326,6 +333,7 @@ export default {
       this.empleados = [];
       this.kpisBackend = null;
       this.modalActivo = null;
+      this.mostrarPlanning = false;
       this.logout({ logoutParams: { returnTo: window.location.origin } });
     }
   },

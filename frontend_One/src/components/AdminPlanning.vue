@@ -13,10 +13,6 @@
         <span class="kpi-val">{{ totalTareasCompletadas }}</span>
         <span class="kpi-lbl">Tareas completadas</span>
       </div>
-      <div class="kpi-box">
-        <span class="kpi-val">${{ totalCostosFinalizados.toLocaleString() }}</span>
-        <span class="kpi-lbl">Costo total USD</span>
-      </div>
     </div>
 
     <div class="main-layout">
@@ -51,7 +47,6 @@
         </div>
       </div>
 
-      <!-- DETALLE DEL PROYECTO -->
       <div class="planning-detail" v-if="proyectoSeleccionado">
 
         <div class="detail-header">
@@ -79,7 +74,6 @@
 
         <div class="tab-content">
 
-          <!--EQUIPO -->
           <div v-if="pestañaActiva === 'Equipo'">
             <div class="equipo-nombre-row">
               <label class="equipo-nombre-lbl">Nombre del equipo</label>
@@ -133,11 +127,21 @@
             </div>
           </div>
 
-          <!--TAREAS -->
           <div v-else-if="pestañaActiva === 'Tareas'">
             <form @submit.prevent="agregarTarea" class="task-form-grid">
               <input type="text" v-model="nuevaTarea.nombre" placeholder="Nueva tarea..." required class="input-task-name" />
-              <select v-model="nuevaTarea.empleadoId" class="select-ms" required :disabled="asignacionesActuales.length === 0">
+              
+              <label class="date-field" style="grid-column: span 1;">
+                <span class="date-field-lbl">Inicio</span>
+                <input type="date" v-model="nuevaTarea.fechaInicio" required class="input-task-date" />
+              </label>
+              
+              <label class="date-field" style="grid-column: span 1;">
+                <span class="date-field-lbl">Fin</span>
+                <input type="date" v-model="nuevaTarea.fechaLimite" required class="input-task-date" :min="nuevaTarea.fechaInicio || undefined" />
+              </label>
+
+              <select v-model="nuevaTarea.empleadoId" class="select-ms" required :disabled="asignacionesActuales.length === 0" style="grid-column: span 2;">
                 <option value="" disabled selected>
                   {{ asignacionesActuales.length === 0 ? 'Sin equipo asignado aún' : 'Trabajador asignado...' }}
                 </option>
@@ -145,14 +149,7 @@
                   {{ member.empleado?.nombre || member.nombre || 'Colaborador' }}
                 </option>
               </select>
-              <label class="date-field">
-                <span class="date-field-lbl">Inicio</span>
-                <input type="date" v-model="nuevaTarea.fechaInicio" required class="input-task-date" />
-              </label>
-              <label class="date-field">
-                <span class="date-field-lbl">Fin</span>
-                <input type="date" v-model="nuevaTarea.fechaLimite" required class="input-task-date" :min="nuevaTarea.fechaInicio || undefined" />
-              </label>
+
               <button type="submit" class="btn-submit-task" :disabled="cargandoTareas">
                 {{ cargandoTareas ? '...' : 'Agregar' }}
               </button>
@@ -212,7 +209,6 @@
           </div>
 
           <div v-else-if="pestañaActiva === 'Costos'">
-
             <h4>Tiempo de Ejecución</h4>
             <div class="tiempo-grid">
               <div class="tiempo-item">
@@ -352,21 +348,15 @@ const cargandoTareas       = ref(false);
 const gastosProyecto       = ref([]);
 const cargandoGastos       = ref(false);
 
-// Map independiente de logs: proyectoId -> logs[]
-// Así los logs NO se pierden cuando el watcher reemplaza los objetos
 const logsMap = ref({});
 
 const nuevaTarea   = ref({ nombre: '', empleadoId: '', fechaInicio: '', fechaLimite: '' });
 const nuevoMiembro = ref({ empleadoId: '' });
 
-// Computed que lee del mapa en vez del objeto del proyecto
 const logsDelProyectoActual = computed(() =>
   proyectoSeleccionado.value ? (logsMap.value[proyectoSeleccionado.value.id] || []) : []
 );
 
-// ==========================================
-// LLAMADAS A LA API
-// ==========================================
 const cargarAsignaciones = async (proyectoId) => {
   if (!proyectoId) return;
   cargandoAsignaciones.value = true;
@@ -436,9 +426,7 @@ const cargarLogs = async (proyectoId) => {
   }
 };
 
-// ==========================================
-// WATCHER
-// ==========================================
+
 watch(() => props.proyectos, (nuevosProyectos) => {
   if (!nuevosProyectos || !Array.isArray(nuevosProyectos)) return;
   const idPrevio = proyectoSeleccionado.value?.id;
@@ -451,7 +439,7 @@ watch(() => props.proyectos, (nuevosProyectos) => {
     costoTotalReal: p.costoTotalReal || 0
   }));
 
-  // Cargar costos reales de proyectos finalizados para el KPI
+
   proyectosLocales.value.forEach(async (p) => {
     const estado = (p.estado?.nombre || p.estado || '').toLowerCase();
     if (estado === 'finalizado') {
@@ -479,14 +467,11 @@ watch(() => props.proyectos, (nuevosProyectos) => {
       const tareasActuales = proyectoSeleccionado.value.tareas || [];
       proyectoSeleccionado.value = mapeado;
       proyectoSeleccionado.value.tareas = tareasActuales;
-      // Los logs viven en logsMap, no se pierden
+
     }
   }
 }, { immediate: true, deep: true });
 
-// ==========================================
-// COMPUTED / KPIs
-// ==========================================
 const totalAtrasados = computed(() =>
   proyectosLocales.value.filter(p => esAtrasado(p.fechaFin)).length
 );
@@ -496,7 +481,6 @@ const totalTareasCompletadas = computed(() =>
     acc + (p.tareas ? p.tareas.filter(t => t.estado === 'Finalizado').length : 0), 0)
 );
 
-// Solo suma gastos reales de proyectos Finalizados
 const totalCostosFinalizados = computed(() =>
   proyectosLocales.value
     .filter(p => (p.estado?.nombre || p.estado || '').toLowerCase() === 'finalizado')
@@ -536,9 +520,6 @@ const gastosManoObra     = computed(() => gastosProyecto.value.filter(g => g.tip
 const totalHerramientas  = computed(() => gastosHerramientas.value.reduce((acc, g) => acc + (g.monto || 0), 0));
 const totalManoObra      = computed(() => gastosManoObra.value.reduce((acc, g) => acc + (g.monto || 0), 0));
 
-// ==========================================
-// MÉTODOS AUXILIARES
-// ==========================================
 const esAtrasado = (fechaFinStr) => {
   if (!fechaFinStr) return false;
   const hoy = new Date();
@@ -557,8 +538,6 @@ const registrarLog = async (proyecto, mensaje) => {
   const horaStr = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
   const fecha   = ahora.toISOString().split('T')[0];
   const nuevoLog = { hora: horaStr, mensaje, fecha };
-
-  // Actualizar mapa inmediatamente (optimista)
   const id = proyecto.id;
   logsMap.value = {
     ...logsMap.value,
@@ -593,9 +572,7 @@ const seleccionarProyecto = async (proyecto) => {
   await cargarLogs(proyecto.id);
 };
 
-// ==========================================
-// ACCIONES
-// ==========================================
+
 const guardarNombreEquipo = async () => {
   if (!proyectoSeleccionado.value?.nombreEquipo?.trim()) return;
   try {
