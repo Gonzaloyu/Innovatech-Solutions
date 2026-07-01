@@ -6,20 +6,26 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.2.5</version>
-        <relativePath/> 
+        <relativePath/>
     </parent>
     <groupId>com.innovatech</groupId>
     <artifactId>backend-gestion</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>backend-gestion</name>
     <description>Microservicio para gestion de proyectos Innovatech</description>
+
     <properties>
         <java.version>21</java.version>
+
         <sonar.projectKey>innovatech-gestion</sonar.projectKey>
-        <sonar.projectName>Innovatech Gestion</sonar.projectName>
+        <sonar.projectName>Backend Gestion</sonar.projectName>
         <sonar.host.url>http://localhost:9000</sonar.host.url>
-        <sonar.token>squ_b2aeec3a95230a3c42ea9cd3c064cd463e850eb6</sonar.token>
+
+        <sonar.exclusions>src/main/java/com/innovatech/backend_gestion/model/**,src/main/java/com/innovatech/backend_gestion/repository/**</sonar.exclusions>
+        <sonar.coverage.exclusions>src/main/java/com/innovatech/backend_gestion/model/**,src/main/java/com/innovatech/backend_gestion/repository/**,src/main/java/com/innovatech/backend_gestion/BackendGestionApplication.java</sonar.coverage.exclusions>
+        <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -38,6 +44,11 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.5.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -64,13 +75,41 @@
                     </excludes>
                 </configuration>
             </plugin>
-            
+
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
                 <version>3.11.0.3922</version>
             </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <configuration>
+
+                    <excludes>
+                        <exclude>com/innovatech/backend_gestion/model/**</exclude>
+                        <exclude>com/innovatech/backend_gestion/repository/**</exclude>
+                        <exclude>com/innovatech/backend_gestion/BackendGestionApplication.class</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-    
+
 </project>

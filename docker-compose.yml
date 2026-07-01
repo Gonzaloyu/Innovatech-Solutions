@@ -54,7 +54,21 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: innovatech-sonarqube
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
 
 volumes:
   mysql_data:
   postgres_data:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:

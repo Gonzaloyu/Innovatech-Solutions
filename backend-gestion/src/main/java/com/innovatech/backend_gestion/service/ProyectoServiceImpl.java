@@ -5,7 +5,6 @@ import com.innovatech.backend_gestion.model.Proyecto;
 import com.innovatech.backend_gestion.model.ProyectoLog;
 import com.innovatech.backend_gestion.repository.ProyectoLogRepository;
 import com.innovatech.backend_gestion.repository.ProyectoRepository;
-import com.innovatech.backend_gestion.service.KafkaProducerService; 
 import java.util.Map; 
 
 import org.springframework.beans.factory.annotation.Autowired;
