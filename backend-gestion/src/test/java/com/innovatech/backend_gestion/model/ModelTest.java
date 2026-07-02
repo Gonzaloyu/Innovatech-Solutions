@@ -11,10 +11,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ModelTest {
 
-    // ══════════════════════════════════════════════════════
-    // Cliente
-    // ══════════════════════════════════════════════════════
-
     @Test
     void cliente_ConstructorVacio_DebeCrearInstancia() {
         Cliente c = new Cliente();
@@ -62,10 +58,6 @@ class ModelTest {
         assertTrue(toString.contains("Empresa ABC"));
     }
 
-    // ══════════════════════════════════════════════════════
-    // Categoria
-    // ══════════════════════════════════════════════════════
-
     @Test
     void categoria_ConstructorVacio_DebeCrearInstancia() {
         Categoria c = new Categoria();
@@ -102,10 +94,6 @@ class ModelTest {
         assertTrue(c.toString().contains("Consultoría"));
     }
 
-    // ══════════════════════════════════════════════════════
-    // EstadoProyecto
-    // ══════════════════════════════════════════════════════
-
     @Test
     void estadoProyecto_ConstructorVacio_DebeCrearInstancia() {
         EstadoProyecto e = new EstadoProyecto();
@@ -135,10 +123,6 @@ class ModelTest {
         assertEquals(e1, e2);
         assertEquals(e1.hashCode(), e2.hashCode());
     }
-
-    // ══════════════════════════════════════════════════════
-    // Asignacion
-    // ══════════════════════════════════════════════════════
 
     @Test
     void asignacion_SettersYGetters_DebenFuncionar() {
@@ -178,10 +162,6 @@ class ModelTest {
         a.setRol("Tester");
         assertTrue(a.toString().contains("Tester"));
     }
-
-    // ══════════════════════════════════════════════════════
-    // Tarea
-    // ══════════════════════════════════════════════════════
 
     @Test
     void tarea_SettersYGetters_DebenFuncionar() {
@@ -235,10 +215,6 @@ class ModelTest {
         assertTrue(t.toString().contains("Diseñar BD"));
     }
 
-    // ══════════════════════════════════════════════════════
-    // ProyectoLog
-    // ══════════════════════════════════════════════════════
-
     @Test
     void proyectoLog_ConstructorVacio_DebeCrearInstancia() {
         ProyectoLog log = new ProyectoLog();
@@ -278,10 +254,6 @@ class ModelTest {
         log.setProyecto(p);
         assertEquals(10L, log.getProyecto().getId());
     }
-
-    // ══════════════════════════════════════════════════════
-    // Comentario
-    // ══════════════════════════════════════════════════════
 
     @Test
     void comentario_SettersYGetters_DebenFuncionar() {
@@ -329,10 +301,6 @@ class ModelTest {
         assertEquals(c1, c2);
         assertEquals(c1.hashCode(), c2.hashCode());
     }
-
-    // ══════════════════════════════════════════════════════
-    // Proyecto
-    // ══════════════════════════════════════════════════════
 
     @Test
     void proyecto_ConstructorVacio_DebeCrearInstancia() {

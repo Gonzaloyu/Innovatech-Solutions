@@ -41,7 +41,6 @@ class KafkaProducerServiceTest {
             contains("Sistema de Logística")
         );
     }
-
     @Test
     void enviarMensajeProyectoCreado_ConNombreVacio_DebeEnviarIgualmente() {
         kafkaProducerService.enviarMensajeProyectoCreado("");

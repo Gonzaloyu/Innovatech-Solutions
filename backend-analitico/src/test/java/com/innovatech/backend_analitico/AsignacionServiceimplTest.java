@@ -59,7 +59,6 @@ class AsignacionServiceImplTest {
         asignacion.setCostoTotalCalculado(BigDecimal.ZERO);
     }
 
-    // ─── crearAsignacion ─────────────────────────────────────────────────────
     @Test
     void crearAsignacion_guardaYRetorna() {
         when(asignacionRepository.save(any(Asignacion.class))).thenReturn(asignacion);
@@ -72,7 +71,6 @@ class AsignacionServiceImplTest {
         verify(asignacionRepository, times(1)).save(asignacion);
     }
 
-    // ─── obtenerTodas ────────────────────────────────────────────────────────
     @Test
     void obtenerTodas_retornaLista() {
         when(asignacionRepository.findAll()).thenReturn(List.of(asignacion));
@@ -93,7 +91,6 @@ class AsignacionServiceImplTest {
         assertTrue(resultado.isEmpty());
     }
 
-    // ─── obtenerPorEmpleado ──────────────────────────────────────────────────
     @Test
     void obtenerPorEmpleado_retornaAsignaciones() {
         when(asignacionRepository.findByEmpleadoId(1L)).thenReturn(List.of(asignacion));
@@ -114,7 +111,6 @@ class AsignacionServiceImplTest {
         assertTrue(resultado.isEmpty());
     }
 
-    // ─── obtenerPorProyecto ──────────────────────────────────────────────────
     @Test
     void obtenerPorProyecto_retornaAsignaciones() {
         when(asignacionRepository.findByProyectoId(1L)).thenReturn(List.of(asignacion));
@@ -126,7 +122,6 @@ class AsignacionServiceImplTest {
         verify(asignacionRepository, times(1)).findByProyectoId(1L);
     }
 
-    // ─── actualizarProgreso — noExiste ───────────────────────────────────────
     @Test
     void actualizarProgreso_noExiste_lanzaExcepcion() {
         when(asignacionRepository.findById(99L)).thenReturn(Optional.empty());
@@ -135,7 +130,6 @@ class AsignacionServiceImplTest {
                 () -> asignacionService.actualizarProgreso(99L, "En Ejecución", "", "", BigDecimal.ZERO));
     }
 
-    // ─── actualizarProgreso — En Ejecución sin fechaInicio ───────────────────
     @Test
     void actualizarProgreso_enEjecucion_sinFechaInicio_asignaFechaInicio() {
         asignacion.setFechaInicio(null);
@@ -150,7 +144,6 @@ class AsignacionServiceImplTest {
         verify(asignacionRepository).save(asignacion);
     }
 
-    // ─── actualizarProgreso — En Ejecución con fechaInicio ya seteada ────────
     @Test
     void actualizarProgreso_enEjecucion_conFechaInicio_noReemplazaFecha() {
         LocalDate fechaOriginal = LocalDate.of(2026, Month.JANUARY, 1);
@@ -164,7 +157,6 @@ class AsignacionServiceImplTest {
         assertEquals(fechaOriginal, asignacion.getFechaInicio());
     }
 
-    // ─── actualizarProgreso — Finalizado con fechaInicio ─────────────────────
     @Test
     void actualizarProgreso_finalizado_conFechaInicio_calculaCostoTotal() {
         asignacion.setFechaInicio(LocalDate.of(2026, Month.JANUARY, 1));
@@ -184,7 +176,6 @@ class AsignacionServiceImplTest {
         assertEquals("Laptop, Monitor", resultado.getHerramientasUtilizadas());
     }
 
-    // ─── actualizarProgreso — Finalizado sin fechaInicio ─────────────────────
     @Test
     void actualizarProgreso_finalizado_sinFechaInicio_noCalculaCosto() {
         asignacion.setFechaInicio(null);
@@ -194,16 +185,14 @@ class AsignacionServiceImplTest {
         Asignacion resultado = asignacionService.actualizarProgreso(
                 1L, "Finalizado", "Sin inicio registrado", "", BigDecimal.ZERO);
 
-        // costoTotalCalculado queda en ZERO porque no hay fechaInicio
         assertEquals(BigDecimal.ZERO, resultado.getCostoTotalCalculado());
         assertEquals("Finalizado", resultado.getEstado());
         assertNotNull(resultado.getFechaFin());
     }
 
-    // ─── actualizarProgreso — costo de tiempo correcto ───────────────────────
     @Test
     void actualizarProgreso_finalizado_calculaCostoTiempoCorrectamente() {
-        // 10 días × 8 hrs × $25/hr = $2000 + $500 herramientas = $2500
+
         LocalDate inicio = LocalDate.of(2026, Month.JUNE, 1);
         asignacion.setFechaInicio(inicio);
         BigDecimal costoHerramientas = new BigDecimal("500.00");
@@ -216,8 +205,6 @@ class AsignacionServiceImplTest {
 
         assertTrue(resultado.getCostoTotalCalculado().compareTo(BigDecimal.ZERO) > 0);
     }
-
-    // ─── actualizarProgreso — comentario y herramientas se persisten ──────────
     @Test
     void actualizarProgreso_persisteComentarioYHerramientas() {
         when(asignacionRepository.findById(1L)).thenReturn(Optional.of(asignacion));
@@ -231,7 +218,6 @@ class AsignacionServiceImplTest {
         assertEquals(BigDecimal.ZERO, asignacion.getCostoHerramientas());
     }
 
-    // ─── actualizarProgreso — estado Asignado no modifica fechas ─────────────
     @Test
     void actualizarProgreso_estadoAsignado_noModificaFechas() {
         asignacion.setFechaInicio(null);

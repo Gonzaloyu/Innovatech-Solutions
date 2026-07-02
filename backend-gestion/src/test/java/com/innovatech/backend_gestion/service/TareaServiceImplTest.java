@@ -200,8 +200,6 @@ class TareaServiceImplTest {
             tareaService.actualizarTarea(99L, nuevaTarea);
         });
     }
-
-
     @Test
     void eliminarTarea_CuandoExiste_DebeEliminarLaTareaCorrecta() {
 
@@ -214,7 +212,6 @@ class TareaServiceImplTest {
         verify(tareaRepository, times(1)).delete(tareaExistente);
 
     }
-
     @Test
     void eliminarTarea_CuandoNoExiste_DebeLanzarExcepcion() {
         when(tareaRepository.findById(99L)).thenReturn(Optional.empty());
